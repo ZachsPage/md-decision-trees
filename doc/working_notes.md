@@ -3,6 +3,7 @@ Notes while working on the [road map](./development.md#project-roadmap)
 
 ## Links
 [tauri](https://tauri.app/v1/guides/development/development-cycle)
+[TS](https://www.typescriptlang.org/docs/handbook/classes.html)
 
 ## Project Folder / File Structure
 Want a minimal set up that is self explanatory - track removed folders to maybe reuse later:
