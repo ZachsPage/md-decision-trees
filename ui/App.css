@@ -1,0 +1,8 @@
+.app{
+  position: fixed; /* Disable scrolling */
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Disable scroll bounce effect */
+  padding-top: 2vh;
+  padding-left: 20vh;
+}

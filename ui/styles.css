@@ -14,15 +14,6 @@
   -webkit-text-size-adjust: 100%;
 }
 
-.app{
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;

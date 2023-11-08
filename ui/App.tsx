@@ -1,10 +1,10 @@
 import "./App.css";
+import Canvas from "./Canvas";
 
 function App() {
-
   return (
     <div className="app">
-      <h1>Welcome to Tauri!</h1>
+      <Canvas/>
     </div>
   );
 }

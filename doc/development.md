@@ -8,13 +8,15 @@
 
 `pnpm tauri dev` - runs the app
 `pnpm tauri build` - bundling
+To see `console.logs` - RightClick -> Inspect Element - Console
 
 ## Project Roadmap
 Here is a list of in order milestones to guide this project:
 * Create / run an example app & understand the structure / workflow - done
-* AltClick to draw rectangles (nodes) on the canvas
-* Click & drag to move around the canvas
-* CtrlScroll to scale the canvas
+* CtrlClick to draw rectangles (nodes) on the canvas  - done
+* Click & drag to move around the canvas - done
+* CtrlScroll to scale the canvas - done
+* Dynamically connect elements with lines
 * Create a standard toolbar to open a file
 * Open that file in Rust & start parsing its contents
 * Display error if file doesn't have `# Header (md-descision-trees)`
