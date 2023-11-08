@@ -16,10 +16,8 @@ Here is a list of in order milestones to guide this project:
 * CtrlClick to draw rectangles (nodes) on the canvas  - done
 * Click & drag to move around the canvas - done
 * CtrlScroll to scale the canvas - done
-* Dynamically connect elements with lines
-* Create a standard toolbar to open a file
-* Open that file in Rust & start parsing its contents
-* Display error if file doesn't have `# Header (md-descision-trees)`
+* Dynamically connect elements with lines - done
+* Open hardcoded file in Rust & start parsing (error if doesn't have `# Header (md-descision-trees)` - first unit test)
 * Start parsing bullet points - serialize the data to send to UI
 * Display a new node per bullet point
 * Figure out running tests in CI - start with Rust tests
@@ -28,6 +26,7 @@ Here is a list of in order milestones to guide this project:
 * AltClick and drag between nodes to display a line connecting them
 * Parse / send bullet point tree data
 * Display the tree as a graph using connection lines
+* ... Create a standard toolbar to open a file
 * ... Add markdown / rust / ts linters?
 * Read a basic encoded file in Rust to get the D B P Cs
 * Make hot-keys to create elements

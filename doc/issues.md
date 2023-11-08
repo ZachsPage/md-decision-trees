@@ -10,8 +10,7 @@ Zoom isn't working great - scales the element size, but not how close together t
 
 ## Refactors
 Refactor drag into a self contained class  
+Don't like how `CanvasElems::CanvasElement::parent` is init'd in `Canvas`... proper TS way to do this without query?
+Look into TS `namespaces`
 With TS, can wrap `HTMLElement` to store things like element size instead of doing `px` string stuff?  
 Use `click_event` for `Canvas` `movementX` or `offsetX`?  
-
-## Performance
-Don't like `querySelectorAll` so often - store all of the elements as created?  
