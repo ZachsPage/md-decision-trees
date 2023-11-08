@@ -1,7 +1,7 @@
 
 // This function was created by Rodrigo Damasceno from 
-// https://stackoverflow.com/questions/19382872/how-to-connect-html-divs-with-lines - the reworked a bit
-function adjustoLeftine(from: HTMLElement, to: HTMLElement, line: HTMLElement) {
+// https://stackoverflow.com/questions/19382872/how-to-connect-html-divs-with-lines - then reworked a bit
+function adjustline(from: HTMLElement, to: HTMLElement, line: HTMLElement) {
   const fromTop = from.offsetTop + from.offsetHeight / 2;
   const fromLeft = from.offsetLeft + from.offsetWidth / 2;
   const toTop = to.offsetTop + to.offsetHeight / 2;
@@ -33,4 +33,4 @@ function adjustoLeftine(from: HTMLElement, to: HTMLElement, line: HTMLElement) {
   line.style.height = `${H}px`;
 }
 
-export default adjustoLeftine;
+export default adjustline;
