@@ -1,4 +1,5 @@
 import "./Canvas.css";
+import adjustLine from "./adjustLine.ts"
 import React, { useEffect } from 'react';
 
 const Canvas: React.FC = () => {
@@ -17,13 +18,14 @@ const Canvas: React.FC = () => {
 
     // Mouse / key events
     // - Utils
+    enum MouseState { Down, Up, Moving };
     function isLeftClick(event: MouseEvent): boolean { return event.button == 0; }
     function holdingCreateButton(event: MouseEvent): boolean { return event.ctrlKey; }
     // - Bind them
     canvas.addEventListener('click', (event) => {
       if (isLeftClick(event)) {
         if (holdingCreateButton(event) && !isDragging) {
-          drawNode(Point.fromMouse(event))
+          new Node(Point.fromMouse(event))
           return;
         }
       }
@@ -34,37 +36,81 @@ const Canvas: React.FC = () => {
     document.addEventListener('mousemove', (event) => { updateDragState(MouseState.Moving, Point.fromMouse(event)); });
 
     // Node creation
-    let newNodeWidth: string = "100px"
-    let newNodeHeight: string = "50px"
-
-    function drawNode(mousePos: Point) {
-      const node = document.createElement('div');
-      node.className = 'node';
-      node.style.left = `${mousePos.x - canvas.offsetLeft}px`;
-      node.style.top = `${mousePos.y - canvas.offsetTop}px`;
-      node.style.width = newNodeWidth;
-      node.style.height = newNodeHeight;
-      canvas.appendChild(node);
+    class CanvasElement {
+      elem: HTMLElement 
+      constructor(elem: HTMLElement) { 
+        this.elem = elem; 
+        canvas.appendChild(this.elem);
+      }
     }
+
+    class Node extends CanvasElement {
+      static newWidth: string = "100px"
+      static newHeight: string = "50px"
+      static nodes: Node[] = []
+
+      lines: Line[] = []; 
+
+      constructor(position: Point) { 
+        let elem = document.createElement('div');
+        elem.className = 'node';
+        elem.style.left = `${position.x - canvas.offsetLeft}px`;
+        elem.style.top = `${position.y - canvas.offsetTop}px`;
+        elem.style.width = Node.newWidth;
+        elem.style.height = Node.newHeight;
+        super(elem)
+        Node.nodes.push(this);
+      }
+
+      redrawLines() { this.lines.forEach((line: Line) => { line.redraw(); }); }
+    };
+
+    class Line extends CanvasElement {
+      to: Node; 
+      from: Node; 
+
+      constructor(to: Node, from: Node) { 
+        const elem = document.createElement('div');
+        elem.className = 'line';
+        super(elem);
+        this.to = to; 
+        this.from = from;
+        to.lines.push(this);
+        from.lines.push(this);
+        adjustLine(from.elem, to.elem, this.elem);
+      }
+
+      redraw() { adjustLine(this.from.elem, this.to.elem, this.elem); }
+    };
+
+    // TODO - remove once testing is done
+    let node1 = new Node(new Point(200, 100))
+    let node2 = new Node(new Point(300, 200))
+    let node3 = new Node(new Point(400, 100))
+    let line1 = new Line(node1, node2);
+    let line2 = new Line(node2, node3);
+    let line3 = new Line(node3, node1);
 
     // Scale elements while zooming
     function handleZoomEvent(wasZoomIn: boolean) {
       const ZOOM_AMOUNT = 2
       const zoomDelta = wasZoomIn ? ZOOM_AMOUNT : -ZOOM_AMOUNT;
       let updatedSize: boolean = false;
-      document.querySelectorAll('.node').forEach((node: HTMLElement) => {
+      Node.nodes.forEach((nodeObj: Node ) => {
+        let node = nodeObj.elem;
         if (!updatedSize) { // For now, generate new size once since all nodes are the same size
           updatedSize = true;
           const newWidth = node.offsetWidth + zoomDelta;
           const newHeight = node.offsetHeight + zoomDelta;
           if (newWidth > 0 && newHeight > 0) { // Store new size according to zoom
-            newNodeWidth = `${newWidth}px`;
-            newNodeHeight = `${newHeight}px`;
+            Node.newWidth = `${newWidth}px`;
+            Node.newHeight = `${newHeight}px`;
           }
         }
         if (updatedSize) {
-          node.style.width = newNodeWidth;
-          node.style.height = newNodeHeight;
+          node.style.width = Node.newWidth;
+          node.style.height = Node.newHeight;
+          nodeObj.redrawLines();
         }
       });
     }
@@ -73,7 +119,6 @@ const Canvas: React.FC = () => {
     let dragMousePos: Point = new Point(0, 0);
     let isDragging: boolean = false; //< Drag state
 
-    enum MouseState { Down, Up, Moving };
     function updateDragState(mouseState: MouseState, mousePos: Point) {
       if (!isDragging && mouseState == MouseState.Down) {
         isDragging = true;
@@ -92,9 +137,11 @@ const Canvas: React.FC = () => {
     function handleDragging(mousePos: Point) {
       const [deltaX, deltaY] = dragMousePos.getDiff(mousePos.x, mousePos.y);
       dragMousePos = mousePos;
-      document.querySelectorAll('.node').forEach((node: HTMLElement) => {
-        node.style.left = `${parseInt(node.style.left) + deltaX}px`
-        node.style.top = `${parseInt(node.style.top) + deltaY}px`
+      Node.nodes.forEach((nodeObj: Node ) => {
+        let style = nodeObj.elem.style;
+        style.left = `${parseInt(style.left) + deltaX}px`
+        style.top = `${parseInt(style.top) + deltaY}px`
+        nodeObj.redrawLines();
       });
     }
 

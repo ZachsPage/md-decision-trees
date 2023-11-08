@@ -24,3 +24,7 @@ Want a minimal set up that is self explanatory - track removed folders to maybe 
   * `css` files - removed whats not needed
   * `vite-env.d.ts` - sets [vite env. vars](https://vitejs.dev/guide/env-and-mode.html#intellisense-for-typescript)
     * Not needed for now
+
+## Learning Notes
+## Typescript
+`var` is from JS, but `let` has block scope - `const` is as expected

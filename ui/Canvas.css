@@ -14,4 +14,13 @@
   position: absolute;
   outline-style: solid;
   outline-color: black;
+  z-index:1
+}
+
+.line{
+  position:absolute;
+  width:3px;
+  margin-top:-1px;
+  background-color:black;
+  z-index:0
 }
