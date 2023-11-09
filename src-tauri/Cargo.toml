@@ -1,8 +1,8 @@
 [package]
 name = "md-decision-trees"
 version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Display / Edit md-decision-tree files"
+authors = ["ZachPage"]
 license = ""
 repository = ""
 edition = "2021"
