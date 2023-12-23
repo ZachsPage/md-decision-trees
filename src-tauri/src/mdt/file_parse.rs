@@ -1,14 +1,19 @@
+pub mod file_parse {
+
 use std::path::PathBuf;
 use std::error::Error;
 use std::fs::read_to_string;
 use lazy_static::lazy_static;
-use structs::{Node, Nodes};
+use super::structs::{Node, Nodes};
 
 lazy_static! {
   pub static ref DATA_DIR: PathBuf = PathBuf::from(format!("{top_dir}/test/data", top_dir=env!("CARGO_MANIFEST_DIR")));
 }
 
-// TODO - figure out how to serialize, send, receive, add rect for each node
+pub fn get_test_file() -> Result<Nodes, String> {
+    return Ok(parse_file(DATA_DIR.join("bullets.md")).map_err(|err| err.to_string())?);
+}
+
 pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
   let bound_str = read_to_string(file_path)?;
   let mut lines = bound_str.lines();
@@ -17,8 +22,9 @@ pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
   let first_line = lines.next().ok_or("File did not contain a first header line")?;
   if !first_line.contains(REQUIRED_HEADER) { Err(format!("First line did not contain {}", REQUIRED_HEADER))?  }
 
-  let mut nodes = Nodes{ name: first_line.to_string(), ..Default::default() };
+  let mut nodes = Nodes{name: first_line.to_string(), ..Default::default()};
 
+  let mut file_order_cnt : u32 = 0;
   for line in lines {
     if line.is_empty() { /* TODO set parsing_text = false; */ continue; }
     // TODO - after figuring out the return & serialization & display
@@ -35,7 +41,8 @@ pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
     let mut bound_char = line.chars();
     let c: char = bound_char.next().unwrap();
     println!("line {} - first char is {}", line, c);
-    nodes.nodes.push(Node::new(line.to_string()));
+    nodes.nodes.push(Node{text: line.to_string(), file_order: file_order_cnt, ..Default::default()});
+    file_order_cnt += 1;
   }
   return Ok(nodes);
 }
@@ -57,4 +64,6 @@ mod tests {
   fn test_bullet_parsing() {
     assert!(parse_file(DATA_DIR.join("bullets.md")).is_ok());
   }
+}
+
 }

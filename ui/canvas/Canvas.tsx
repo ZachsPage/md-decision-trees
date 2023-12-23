@@ -2,6 +2,7 @@ import "./Canvas.css";
 import {Point, MouseState, isLeftClick} from "../Utils"
 import {CanvasElement, Node, Line} from "./CanvasElems"
 import {Pan} from "./Pan"
+import * as fromRust from "../bindings/bindings"
 
 import React, { useEffect } from 'react';
 
@@ -19,6 +20,25 @@ const Canvas: React.FC = () => {
     const line1 = new Line(node1, node2);
     const line2 = new Line(node2, node3);
     const line3 = new Line(node3, node1);
+
+    // Demo - show retrieving nodes from file read by Rust - TODO - make this async
+    let node_promise: Promise<fromRust.Nodes> = fromRust.getNodes("placeholder_file_path.md");
+    node_promise
+      .catch((error) => console.error(error))
+      .then((nodes: fromRust.Nodes | void) => {
+        // TODO - show error pop-up?
+        if (!nodes) { console.error("Nodes are null?"); return; }
+        console.log("Received nodes for {}", nodes.name);
+        let node_x = 200, node_y = 400, num_nodes = 0;
+        nodes.nodes.forEach((node: fromRust.Node) => {
+          new Node(new Point(node_x, node_y))
+          if (num_nodes++ == 3) {
+            node_y += 75, node_x = 200, num_nodes = 0;
+          } else {
+            node_x += 150 
+          }
+        });
+      })
 
     // Mouse / key events
     // - Bind them
@@ -40,7 +60,7 @@ const Canvas: React.FC = () => {
       const ZOOM_AMOUNT = 2
       const zoomDelta = wasZoomIn ? ZOOM_AMOUNT : -ZOOM_AMOUNT;
       let updatedSize: boolean = false;
-      Node.nodes.forEach((nodeObj: Node ) => {
+      Node.nodes.forEach((nodeObj: Node) => {
         let node = nodeObj.elem;
         if (!updatedSize) { // For now, generate new size once since all nodes are the same size
           updatedSize = true;

@@ -1,31 +1,20 @@
 pub mod structs {
 
-use std::rc::Rc;
+use serde::Serialize;
+use specta::Type;
 
-#[derive(Default)]
+#[derive(Default, Serialize, Type)]
 pub struct Node {
   pub text: String,
-  // TODO - using RefCount here, but when serializing, will need to get index?
-  pub l_child: Option<Rc<Node>>,
-  pub r_child: Option<Rc<Node>>,
+  pub file_order: u32,
+  pub l_child_idx: Option<u32>,
+  pub r_child_idx: Option<u32>,
 }
 
-impl Node {
-  pub fn new(text: String) -> Rc<Self> {
-    Rc::new_cyclic(|_| {
-      Node {
-        text: text,
-        ..Default::default()
-      }
-    })
-  }
-}
-
-#[derive(Default)]
+#[derive(Default, Serialize, Type)]
 pub struct Nodes {
   pub name: String,
-    // TODO - really want RC here?
-  pub nodes: Vec<Rc<Node>>
+  pub nodes: Vec<Node>
 }
 
 }
