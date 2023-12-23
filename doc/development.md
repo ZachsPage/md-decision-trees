@@ -10,6 +10,8 @@
 `pnpm tauri build` - bundling
 To see `console.logs` - RightClick -> Inspect Element - Console
 
+Run test & see prints - `(cd src-tauri/ && cargo test -- --nocapture)`
+
 ## Project Roadmap
 Here is a list of in order milestones to guide this project:
 * Create / run an example app & understand the structure / workflow - done
