@@ -1575,6 +1575,7 @@ name = "md-decision-trees"
 version = "0.0.0"
 dependencies = [
  "lazy_static",
+ "regex",
  "serde",
  "serde_json",
  "specta",

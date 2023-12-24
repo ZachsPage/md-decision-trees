@@ -5,6 +5,8 @@
 `cargo create-tauri-app` 
 * React TypeScript (since `pnpm`, run `pnpm install` once)
 * Had to update Rust `rustup update`
+Managing modules:
+* `cargo add / remove <name>`
 
 `pnpm tauri dev` - runs the app
 `pnpm tauri build` - bundling

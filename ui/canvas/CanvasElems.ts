@@ -19,13 +19,14 @@ export class Node extends CanvasElement {
 
   lines: Line[] = []; 
 
-  constructor(position: Point) { 
+  constructor(position: Point, text: string = "") { 
     let elem = document.createElement('div');
     elem.className = 'node';
     elem.style.left = `${position.x - CanvasElement.parent.offsetLeft}px`;
     elem.style.top = `${position.y - CanvasElement.parent.offsetTop}px`;
     elem.style.width = Node.newWidth;
     elem.style.height = Node.newHeight;
+    elem.innerHTML = text;
     super(elem)
     Node.nodes.push(this);
   }

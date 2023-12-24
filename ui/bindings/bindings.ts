@@ -15,4 +15,4 @@ export function getNodes(filePath: string) {
 }
 
 export type Nodes = { name: string; nodes: Node[] }
-export type Node = { text: string; file_order: number; l_child_idx: number | null; r_child_idx: number | null }
+export type Node = { text: string; file_order: number; indent_level: number; l_child_idx: number | null; r_child_idx: number | null }
