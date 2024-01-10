@@ -1,4 +1,5 @@
 import {Point} from "../Utils"
+import * as fromRust from "../bindings/bindings"
 import adjustLine from "./adjustLine"
 
 // Base object
@@ -17,7 +18,8 @@ export class Node extends CanvasElement {
   static newHeight: string = "50px"
   static nodes: Node[] = []
 
-  lines: Line[] = []; 
+  lines: Line[] = [];
+  dataNode: fromRust.Node | undefined;
 
   constructor(position: Point, text: string = "") { 
     let elem = document.createElement('div');

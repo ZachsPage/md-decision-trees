@@ -6,6 +6,7 @@ use std::fs::read_to_string;
 use lazy_static::lazy_static;
 use super::structs::{Node, Nodes};
 use regex::Regex;
+use std::collections::VecDeque;
 
 // For non-const statics
 lazy_static! {
@@ -13,23 +14,50 @@ lazy_static! {
   pub static ref START_NODE_BEGIN_REGEX: Regex = Regex::new(r"\s*\* ").unwrap();
 }
 
+/// TODO - remove - temporary test function to use for a tauri bind - load test file as a demo
 pub fn get_test_file() -> Result<Nodes, String> {
     return Ok(parse_file(DATA_DIR.join("bullets.md")).map_err(|err| err.to_string())?);
 }
 
+/// Last node read that may be a parent to the current node
+#[derive(Copy, Clone)]
+struct PotentialParent { level: u32, idx: u32 } 
+
+/// Parses bullet point files
 #[derive(Default)]
 struct BulletFileParser
 {
     file_order_cnt : u32,
     prev_parsed_text: Option<String>,
+    parent_q: VecDeque<PotentialParent>,
 }
 
 impl BulletFileParser {
+  pub fn add_curr_as_pot_parent(&mut self, level: u32) {
+    self.parent_q.push_back(PotentialParent{level: level, idx: self.file_order_cnt});
+  }
+
   pub fn create_node(&mut self, text: &String, indent_level: u32) -> Node {
     // TODO - have a runtime level logger for debug prints
     println!("Creating node with text {} - level {}", text, indent_level);
-    let new_node = Node{text: text.to_string(), indent_level: indent_level, 
+    let mut new_node = Node{text: text.to_string(), level: indent_level, 
                         file_order: self.file_order_cnt, ..Default::default()};
+    // Since can guarantee reading the file in DFS order, can pop through the potential parent queue until we find our
+    // already read parent, or the queue is emptied so if the current doesn't use the parent, future nodes wont either
+    while !self.parent_q.is_empty() {
+      if let Some(ref pot_parent) = self.parent_q.back() {
+        if pot_parent.level < new_node.level {
+          new_node.parent_idxs.push(pot_parent.idx);
+          self.add_curr_as_pot_parent(new_node.level);
+          break;
+        } else {
+          self.parent_q.pop_back();
+        }
+      }
+    }
+    if self.parent_q.is_empty() {
+      self.add_curr_as_pot_parent(new_node.level);
+    }
     self.file_order_cnt += 1;
     return new_node;
   }
@@ -88,20 +116,60 @@ mod tests {
     }
   }
 
+  fn vecs_match<T: Eq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+    if a.len() != b.len() { return false; }
+    let num_matching = a.iter().zip(b.iter()).filter(|&(a,b)| a == b).count();
+    return num_matching == a.len();
+  }
+
   #[test]
   fn test_bullet_parsing() {
     let node_res = parse_file(DATA_DIR.join("bullets.md"));
     assert!(node_res.is_ok());
     if let Ok(nodes) = node_res {
-      assert!(nodes.nodes.len() == 8); //< Should match how many nodes are in the file
-      let first_node = &nodes.nodes[0];
-      assert!(first_node.text == "Parent1");
-      assert!(first_node.file_order == 0);
-      assert!(first_node.indent_level == 0);
-      let second_node = &nodes.nodes[1];
-      assert!(second_node.text == "Child1.1");
-      assert!(second_node.file_order == 1);
-      assert!(second_node.indent_level == 1);
+      assert!(nodes.nodes.len() == 10); //< Should match how many nodes are in the file
+
+      // Get nodes for later testing & verify their names
+      let get_node_with_name = |idx: usize, name: &str| -> &Node { 
+        let node_at_idx = &nodes.nodes[idx];
+        assert!(node_at_idx.text == name);
+        return node_at_idx;
+      };
+      let p1 = get_node_with_name(0, "Parent1");
+      let c11 = get_node_with_name(1, "Child1.1");
+      let c12 = get_node_with_name(2, "Child1.2");
+      let c121 = get_node_with_name(3, "Child1.2.1");
+      let c1211 = get_node_with_name(4, "Child1.2.1.1");
+      let c122 = get_node_with_name(5, "Child1.2.2");
+      let c13 = get_node_with_name(6, "Child1.3");
+      let p2 = get_node_with_name(7, "Parent2");
+      let c21 = get_node_with_name(8, "Child2.1");
+
+      // Verify file order
+      assert!(p1.file_order == 0);
+      assert!(c11.file_order == 1);
+      assert!(c12.file_order == 2);
+      assert!(c121.file_order == 3);
+      assert!(p2.file_order == 7);
+
+      // Verify leveling
+      assert!(p1.level == 0);
+      assert!(c11.level == 1);
+      assert!(c12.level == 1);
+      assert!(c121.level == 2);
+      assert!(p2.level == 0);
+      assert!(c21.level == 1);
+
+      // Verify parent index handling
+      assert!(p1.parent_idxs.is_empty());
+      assert!(vecs_match(&c11.parent_idxs, &Vec::from([p1.file_order])));
+      assert!(vecs_match(&c12.parent_idxs, &Vec::from([p1.file_order])));
+      assert!(vecs_match(&c121.parent_idxs, &Vec::from([c12.file_order])));
+      assert!(vecs_match(&c1211.parent_idxs, &Vec::from([c121.file_order])));
+      assert!(vecs_match(&c122.parent_idxs, &Vec::from([c12.file_order])));
+      assert!(vecs_match(&c13.parent_idxs, &Vec::from([p1.file_order])));
+      assert!(p2.parent_idxs.is_empty());
+      assert!(vecs_match(&c21.parent_idxs, &Vec::from([p2.file_order])));
     }
   }
 }

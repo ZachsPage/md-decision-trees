@@ -41,7 +41,6 @@ To create the decision hierarchy, we'll use an encoding strategy for organizatio
 * `P`: Pro
 * `C`: Con
 * `N`: Note
-* `W`: Weight
 
 ### Mapping Rules
 Decisions can have 1 to many Branches - labeled `B1` / `B2` / etc  
@@ -51,8 +50,6 @@ Pros / Cons associate with one to many Branches:
 * This will likely be tracked with tokens like `P1B1C1B2`  
 
 Notes can be associated with one to many of any entity  
-Weights can be assigned to each targets Pro / Con - (`P1B1W5`, `C1B2W7`)  
-* Weights are reused to add a calculated score to each Branch (show in the UI)
 
 ## Folder Layout / Links
 `doc`
