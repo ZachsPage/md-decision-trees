@@ -14,3 +14,8 @@ export class Point {
 }
 
 export function isLeftClick(event: MouseEvent): boolean { return event.button == 0; }
+
+// Throws if is_true is false - should be programmer error & not handlable
+export function assert(is_true: any): void {
+  if (!is_true) { throw new Error("Fatal Assertion"); }
+}

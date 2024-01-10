@@ -3,6 +3,7 @@ import {Point, MouseState, isLeftClick} from "../Utils"
 import {CanvasElement, Node, Line} from "./CanvasElems"
 import {Pan} from "./Pan"
 import * as fromRust from "../bindings/bindings"
+import {Renderer} from "./Render"
 
 import React, { useEffect } from 'react';
 
@@ -13,14 +14,6 @@ const Canvas: React.FC = () => {
     const canvas = CanvasElement.parent;
     const panning = new Pan();
 
-    // Demo - show some nodes connected with some lines
-    const node1 = new Node(new Point(200, 100))
-    const node2 = new Node(new Point(300, 200))
-    const node3 = new Node(new Point(400, 100))
-    const line1 = new Line(node1, node2);
-    const line2 = new Line(node2, node3);
-    const line3 = new Line(node3, node1);
-
     // Demo - show retrieving nodes from file read by Rust - TODO - make this async
     let node_promise: Promise<fromRust.Nodes> = fromRust.getNodes("placeholder_file_path.md");
     node_promise
@@ -29,15 +22,8 @@ const Canvas: React.FC = () => {
         // TODO - show error pop-up?
         if (!nodes) { console.error("Nodes are null?"); return; }
         console.log("Received nodes for {}", nodes.name);
-        let node_x = 200, node_y = 400, num_nodes = 0;
-        nodes.nodes.forEach((node: fromRust.Node) => {
-          new Node(new Point(node_x, node_y))
-          if (num_nodes++ == 3) {
-            node_y += 75, node_x = 200, num_nodes = 0;
-          } else {
-            node_x += 150 
-          }
-        });
+        let renderer = new Renderer();
+        renderer.renderNodes(nodes);
       })
 
     // Mouse / key events
@@ -46,7 +32,7 @@ const Canvas: React.FC = () => {
     canvas.addEventListener('mousedown', (event) => { 
       if (!isLeftClick(event)) { return; }
       if (holdingCreateButton(event) && !panning.isActive) {
-        new Node(Point.fromMouse(event))
+        new Node(Point.fromMouse(event));
         return;
       }
       panning.update(MouseState.Down, Point.fromMouse(event)); 
