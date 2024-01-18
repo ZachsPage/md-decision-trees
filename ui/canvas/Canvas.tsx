@@ -37,9 +37,10 @@ const Canvas: React.FC = () => {
       }
       panning.update(MouseState.Down, Point.fromMouse(event)); 
     });
-    document.addEventListener('mouseup', (event) => { panning.update(MouseState.Up, Point.fromMouse(event)); });
-    document.addEventListener('mousemove', (event) => { panning.update(MouseState.Moving, Point.fromMouse(event)); });
-    canvas.addEventListener('wheel', (event) => { handleZoomEvent(event.deltaY > 0); });
+    // TODO - remove these manual events
+    //document.addEventListener('mouseup', (event) => { panning.update(MouseState.Up, Point.fromMouse(event)); });
+    //document.addEventListener('mousemove', (event) => { panning.update(MouseState.Moving, Point.fromMouse(event)); });
+    //canvas.addEventListener('wheel', (event) => { handleZoomEvent(event.deltaY > 0); });
 
     // Scale elements while zooming
     function handleZoomEvent(wasZoomIn: boolean) {

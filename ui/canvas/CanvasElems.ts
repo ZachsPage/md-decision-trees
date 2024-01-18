@@ -19,37 +19,43 @@ export class Node extends CanvasElement {
   static nodes: Node[] = []
 
   lines: Line[] = [];
-  dataNode: fromRust.Node | undefined;
+  dataNode: fromRust.Node | undefined = undefined;
+  cyNode: any | undefined = undefined; //< TODO - get types for cytoscape.js
 
   constructor(position: Point, text: string = "") { 
     let elem = document.createElement('div');
     elem.className = 'node';
-    elem.style.left = `${position.x - CanvasElement.parent.offsetLeft}px`;
-    elem.style.top = `${position.y - CanvasElement.parent.offsetTop}px`;
     elem.style.width = Node.newWidth;
     elem.style.height = Node.newHeight;
     elem.innerHTML = text;
-    super(elem)
+    super(elem);
     Node.nodes.push(this);
+    this.updatePosition(position);
+  }
+
+  updatePosition(position: Point) {
+    this.elem.style.left = `${position.x}px`;
+    this.elem.style.top = `${position.y}px`;
   }
 
   redrawLines() { this.lines.forEach((line: Line) => { line.redraw(); }); }
 };
 
-// Connects Nodes
+// Connects Nodes - TODO - will remove
 export class Line extends CanvasElement {
   to: Node; 
   from: Node; 
 
   constructor(to: Node, from: Node) { 
-    const elem = document.createElement('div');
-    elem.className = 'line';
-    super(elem);
-    this.to = to; 
-    this.from = from;
-    to.lines.push(this);
-    from.lines.push(this);
-    adjustLine(from.elem, to.elem, this.elem);
+    //const elem = document.createElement('div');
+    //elem.className = 'line';
+    //super(elem);
+    super(null);
+    //this.to = to; 
+    //this.from = from;
+    //to.lines.push(this);
+    //from.lines.push(this);
+    //adjustLine(from.elem, to.elem, this.elem);
   }
 
   redraw() { adjustLine(this.from.elem, this.to.elem, this.elem); }

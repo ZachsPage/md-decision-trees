@@ -17,5 +17,10 @@ export function isLeftClick(event: MouseEvent): boolean { return event.button ==
 
 // Throws if is_true is false - should be programmer error & not handlable
 export function assert(is_true: any): void {
-  if (!is_true) { throw new Error("Fatal Assertion"); }
+  if (!is_true) { throw new Error("Utils.ts - assert - fatal"); }
+}
+
+export function notNull(element: any): NonNullable<any> {
+  if (element == null) { throw new Error("Utils.ts - notNull - fatal"); }
+  return element;
 }
