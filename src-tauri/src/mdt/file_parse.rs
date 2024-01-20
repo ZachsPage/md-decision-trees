@@ -16,7 +16,7 @@ lazy_static! {
 
 /// TODO - remove - temporary test function to use for a tauri bind - load test file as a demo
 pub fn get_test_file() -> Result<Nodes, String> {
-    return Ok(parse_file(DATA_DIR.join("bullets.md")).map_err(|err| err.to_string())?);
+    return Ok(parse_file(DATA_DIR.join("02_long_bullets.md")).map_err(|err| err.to_string())?);
 }
 
 /// Last node read that may be a parent to the current node
@@ -109,7 +109,7 @@ mod tests {
 
   #[test]
   fn test_invalid_file() {
-    let node_res = parse_file(DATA_DIR.join("invalid_file.md"));
+    let node_res = parse_file(DATA_DIR.join("00_invalid_file.md"));
     assert!(node_res.is_err());
     if let Err(err) = node_res {
       assert!(err.to_string().contains("md-decision-trees"));
@@ -124,7 +124,7 @@ mod tests {
 
   #[test]
   fn test_bullet_parsing() {
-    let node_res = parse_file(DATA_DIR.join("bullets.md"));
+    let node_res = parse_file(DATA_DIR.join("01_bullets.md"));
     assert!(node_res.is_ok());
     if let Ok(nodes) = node_res {
       assert!(nodes.nodes.len() == 10); //< Should match how many nodes are in the file
