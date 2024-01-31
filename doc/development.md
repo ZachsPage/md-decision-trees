@@ -27,19 +27,20 @@ Here is a list of in order milestones to guide this project:
 * Open hardcoded file in Rust & start parsing (error if doesn't have `# Header (md-descision-trees)` - first unit test) - done
 * Start parsing bullet points - serialize the data to send to UI - done
 * Display a new node per bullet point - done
-* Integrate cytoscape:
-  * Use to layout graph
-  * Rebind current pan / zoom motions
+* Integrate cytoscape (Use to layout graph, rebind current pan / zoom motions) - done
+* Figure out layout settings to have: Ds left -> right, B / P / C top to bottom - done?
+* Display an error pop up
+* Side menu to show hot-key / color coding help
 * Read a basic encoded file in Rust to get the D B P Cs - display type (see README.md)
-* Figure out layout settings to have: Ds left -> right, B / P / C top to bottom
 * Figure out how to display a Pro to one branch but a Con to another
-* Side menu to show hot-key help
 * Create a standard toolbar to open a file
-* Make relationships collapsibler
+* Sidebar that can navigate the file system:
+  * Take in a program argument to choose the root directory
+  * Only show `*.md` files
+* Make relationships collapsible
 * Make nodes collapsible (only show partial text)
 * Filter what is being viewed - Ds, Bs, Ps, Cs, Ns - change through  
-* Create color scheme to make UI look bette
-* Sidebar that can navigate the file system - alternative context menu to `Open`
+* Create color scheme to make UI look better
 * Figure out bundling
 
 ### Updating The File / Creating in UI

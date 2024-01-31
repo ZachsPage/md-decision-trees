@@ -6,8 +6,12 @@ import {Renderer} from "./Render"
 
 import React, { useEffect } from 'react';
 
+interface CanvasProps {
+  handleError: (newError: string) => void;
+};
+
 // What is drawn on / shows nodes
-const Canvas: React.FC = () => {
+const Canvas: React.FC<CanvasProps> = ({handleError}) => {
   useEffect(() => {
     CanvasElement.parent = document.querySelector('.canvas') as HTMLElement;
     const canvas = CanvasElement.parent;
@@ -18,6 +22,7 @@ const Canvas: React.FC = () => {
       .catch((error) => console.error(error))
       .then((nodes: fromRust.Nodes | void) => {
         // TODO - show error pop-up?
+        handleError("Nodes are null?");
         if (!nodes) { console.error("Nodes are null?"); return; }
         console.log("Received nodes for {}", nodes.name);
         let renderer = new Renderer();
@@ -26,7 +31,7 @@ const Canvas: React.FC = () => {
 
     // Example for mouse / key events
     //document.addEventListener('mouseup', (event) => { panning.update(MouseState.Up, Point.fromMouse(event)); });
-  }, []);
+  }, [handleError]);
 
   return <div className="canvas"></div>;
 };

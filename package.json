@@ -15,7 +15,8 @@
     "cytoscape": "^3.28.1",
     "cytoscape-dagre": "^2.5.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-modal-resizable-draggable": "^0.1.6"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.5.0",
@@ -24,5 +25,10 @@
     "@vitejs/plugin-react": "^4.0.3",
     "typescript": "^5.0.2",
     "vite": "^4.4.4"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "react-modal-resizable-draggable@0.1.6": "patches/react-modal-resizable-draggable@0.1.6.patch"
+    }
   }
 }
