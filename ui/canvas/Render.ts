@@ -1,4 +1,4 @@
-import {Point, assert, notNull} from "../Utils"
+import {assert, notNull} from "../Utils"
 import {Node} from "./CanvasElems"
 import * as fromRust from "../bindings/bindings"
 import cytoscape from "cytoscape"
@@ -26,7 +26,8 @@ export class Renderer {
          'text-valign': "center", 'text-halign': "center", 'text-wrap': "wrap", 'text-max-width': '200'})
     .update();
     cytoscape.use(dagre)
-    // Example for assigning events - this.cy.on('drag', 'node', (evt) => { this.transferCyToCanvasNodePos(evt.target); });
+    // Example for assigning events - 
+    //this.cy.on('drag', 'node', (evt) => { this.transferCyToCanvasNodePos(evt.target); });
   }
 
   renderNodes(nodes : fromRust.Nodes) {

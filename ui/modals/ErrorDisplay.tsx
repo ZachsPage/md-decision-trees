@@ -1,51 +1,42 @@
-import React, {Component, MutableRefObject, forwardRef} from 'react';
+import React, {createContext, useContext, useState} from 'react';
 import './resizable_draggable_modal.css';
 import ReactModal from 'react-modal-resizable-draggable';
 
-interface ErrorDisplayProps {
-    innerRef: MutableRefObject<ErrorDisplay>,
+interface ErrorContextIntfc { 
+    errors: string[], newError: boolean, 
+    clearNewError: () => void,
+    addError: (error: string) => void,
 };
 
-export class ErrorDisplay extends Component<ErrorDisplayProps> {
-    openModal() { this.setState({modalIsOpen: true}); }
-    closeModal() { this.setState({modalIsOpen: false}); }
+const ErrorContextVal: ErrorContextIntfc = { 
+    errors: [], 
+    newError: false,
+    clearNewError: () => { ErrorContextVal.newError = false; },
+    addError: (newError: string) => { 
+        console.log("Add error", newError, ErrorContextVal.newError);
+        ErrorContextVal.errors = [...ErrorContextVal.errors, newError]; 
+        ErrorContextVal.newError = true;
+    },
+}
 
-    constructor(props: any) {
-        super(props);
-        this.state = { modalIsOpen: false, isDragging: false, isResizing: false, errors: []};
-        this.openModal = this.openModal.bind(this);
-        this.closeModal = this.closeModal.bind(this);
-    }
+export const ErrorContext = createContext<ErrorContextIntfc>(ErrorContextVal);
 
-    addError(newError: string) {
-        this.openModal();
-        this.setState((prevState) => ({
-            errors: [...prevState.errors, newError],
-        }));
-    }
+export const ErrorDisplay: React.FC = () => {
+    const {errors, newError} = useContext(ErrorContext);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
 
-    render() {
-        return (
-        <div ref={this.props.innerRef}>
-            <button onClick={this.openModal}>Open error console</button>
-            <ReactModal 
-                initWidth={400} 
-                initHeight={200} 
-                className={"error-display-modal"}
-                onRequestClose={this.closeModal} 
-                isOpen={this.state.modalIsOpen}>
+    return (
+        <div>
+            <button onClick={() => {setModalIsOpen(true)}}>Open error console</button>
+            <ReactModal className={"error-display-modal"}
+                    initWidth={400} initHeight={200} 
+                    isOpen={modalIsOpen} onRequestClose={() => {setModalIsOpen(false)}}>
                 <h3 className="error-header">Console</h3>
-                <button className="error-close-btn" onClick={this.closeModal}>Close</button>
+                <button className="error-close-btn" onClick={() => {setModalIsOpen(false)}}>Close</button>
                 <div className="error-body">
-                    {this.state.errors.map((error, _) => (
-                        <p>{error}</p>
-                    ))}
+                    {errors.map((error, key) => ( <p key={key}>{error}</p>))}
                 </div>
             </ReactModal>
         </div>
-    )};
+    )
 };
-
-export const ErrorDisplayFromRef = forwardRef((props, ref) => (
-    <ErrorDisplay innerRef={ref} {...props}/>
-));
