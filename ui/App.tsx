@@ -1,10 +1,15 @@
 import "./App.css";
-import Canvas from "./canvas/Canvas";
+import {Canvas} from "./canvas/Canvas";
+import {ErrorDisplay} from "./modals/ErrorDisplay";
+import {ErrorStore} from "./stores/ErrorStore";
 
 function App() {
+  const errorStore = new ErrorStore();
+
   return (
     <div className="app">
-      <Canvas/>
+      <ErrorDisplay errorStore={errorStore}/>
+      <Canvas errorStore={errorStore}/>
     </div>
   );
 }

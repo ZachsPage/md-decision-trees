@@ -1,10 +1,8 @@
-import React from "react";
+import "./styles.css";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles.css";
 
+// <React.StrictMode> was causing Canvas :: useEffect to be called twice...
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />
 );
