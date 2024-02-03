@@ -1,13 +1,15 @@
 import "./App.css";
-import {useState} from 'react';
-import Canvas from "./canvas/Canvas";
+import {Canvas} from "./canvas/Canvas";
 import {ErrorDisplay} from "./modals/ErrorDisplay";
+import {ErrorStore} from "./stores/ErrorStore";
 
 function App() {
+  const errorStore = new ErrorStore();
+
   return (
     <div className="app">
-      <ErrorDisplay/>
-      <Canvas/>
+      <ErrorDisplay errorStore={errorStore}/>
+      <Canvas errorStore={errorStore}/>
     </div>
   );
 }

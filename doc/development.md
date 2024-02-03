@@ -29,7 +29,7 @@ Here is a list of in order milestones to guide this project:
 * Display a new node per bullet point - done
 * Integrate cytoscape (Use to layout graph, rebind current pan / zoom motions) - done
 * Figure out layout settings to have: Ds left -> right, B / P / C top to bottom - done?
-* Display an error pop up
+* Display an error pop up - done
 * Side menu to show hot-key / color coding help
 * Read a basic encoded file in Rust to get the D B P Cs - display type (see README.md)
 * Figure out how to display a Pro to one branch but a Con to another
