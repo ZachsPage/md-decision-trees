@@ -30,23 +30,26 @@ Here is a list of in order milestones to guide this project:
 * Integrate cytoscape (Use to layout graph, rebind current pan / zoom motions) - done
 * Figure out layout settings to have: Ds left -> right, B / P / C top to bottom - done?
 * Display an error pop up - done
-* Side menu to show hot-key / color coding help
+* Skeleton layout of app toolbars - done
+* Add a quick way to allow a user to open a file - done
+* Ctrl+S to reserialize the UI content & write it back out to file (should match original)
+* Ctrl+click to edit a nodes text - should be able to save & update the file
 * Read a basic encoded file in Rust to get the D B P Cs - display type (see README.md)
-* Figure out how to display a Pro to one branch but a Con to another
-* Create a standard toolbar to open a file
+* Add color codes - Pro (green), Con (red), Decision (light orange) Branch (light blue), Notes (light yellow)
+* Context menu for canvas - create Decision - write update to file
+* Context menu for node - create B / P / C
+  * Make hot-keys to create elements
+* Side menu to show hot-key / color coding help
+* Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
+* Make relationships collapsible
+* Make nodes collapsible (only show partial text)
+* Filter what is being viewed - Ds, Bs, Ps, Cs, Ns - change through view modal
+* Create color scheme to make UI look better
+* Figure out bundling
+* Replace quick file opener with a file explorer in the left toolbar
 * Sidebar that can navigate the file system:
   * Take in a program argument to choose the root directory
   * Only show `*.md` files
-* Make relationships collapsible
-* Make nodes collapsible (only show partial text)
-* Filter what is being viewed - Ds, Bs, Ps, Cs, Ns - change through  
-* Create color scheme to make UI look better
-* Figure out bundling
-
-### Updating The File / Creating in UI
-* Ctrl+S to reserialize the UI content & write it back out to file (should match original)
-* Alt+Click and drag between nodes to display a line connecting them
-* Make hot-keys to create elements
 
 ### Dev Experience
 * Add unit TS unit using `jest`

@@ -4,33 +4,37 @@ import {observer, inject} from 'mobx-react';
 import * as fromRust from "../bindings/bindings"
 import {CanvasElement} from "./CanvasElems"
 import {ErrorStore} from "../stores/ErrorStore"
+import {CanvasStore} from "../stores/CanvasStore"
 import {Renderer} from "./Render"
 
 interface CanvasProps {
-    errorStore: ErrorStore
+    errorStore: ErrorStore,
+    canvasStore: CanvasStore
 }
 
 // What is drawn on / shows nodes
-export const Canvas: React.FC<CanvasProps> = ({errorStore}) => {
+export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}) => {
+  let renderer: Renderer | null;
+  let firstTime: boolean = true;
+
   useEffect(() => {
     CanvasElement.parent = document.querySelector('.canvas') as HTMLElement;
-    // Demo - show retrieving nodes from file read by Rust - TODO - make this async
-    let node_promise: Promise<fromRust.Nodes> = fromRust.getNodes("placeholder_file_path.md");
-    node_promise
-      .catch((error) => console.error(error))
-      .then((nodes: fromRust.Nodes | void) => {
-        if (!nodes) { errorStore.addError("Nodes are null?"); return; }
-        console.log("Received nodes for {}", nodes.name);
-        let renderer = new Renderer();
-        renderer.renderNodes(nodes);
+    const fileToLoad = firstTime ? "TEST_FILE:02_long_bullets.md" : canvasStore.filePath;
+    firstTime = false;
+    fromRust.getNodes(fileToLoad)
+      .catch((error) => {
+        errorStore.addError(`Error reading ${fileToLoad} - ${error}`);
       })
-
-      setTimeout(() => {errorStore.addError("Demo off error popup")}, 2000);
-      setTimeout(() => {errorStore.addError("Delayed demo off error popup")}, 4000);
+      .then((nodes: fromRust.Nodes | void) => {
+        if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
+        console.log("Received nodes for {}", nodes.name);
+        renderer = new Renderer();
+        renderer.renderNodes(nodes);
+      });
 
       // Example for mouse / key events
       //document.addEventListener('mouseup', (event) => { panning.update(MouseState.Up, Point.fromMouse(event)); });
-  });
+  }, [canvasStore.filePath]);
 
   return <div className="canvas"></div>;
-};
+});
