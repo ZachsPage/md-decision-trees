@@ -1,8 +1,14 @@
-.app{
-  position: fixed; /* Disable scrolling */
+#app{
+  display: flex;
+  flex-direction: column;
+  position: fixed;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Disable scroll bounce effect */
-  padding-top: 2vh;
-  padding-left: 20vh;
+}
+
+#app #side-by-side {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
 }

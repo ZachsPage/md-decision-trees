@@ -14,9 +14,25 @@ lazy_static! {
   pub static ref START_NODE_BEGIN_REGEX: Regex = Regex::new(r"\s*\* ").unwrap();
 }
 
-/// TODO - remove - temporary test function to use for a tauri bind - load test file as a demo
-pub fn get_test_file() -> Result<Nodes, String> {
-    return Ok(parse_file(DATA_DIR.join("02_long_bullets.md")).map_err(|err| err.to_string())?);
+/// Top level function called from the front end
+pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
+  let bound_str = read_to_string(file_path)?;
+  let mut lines = bound_str.lines();
+
+  const REQUIRED_HEADER: &str = "(md-decision-trees)";
+  let first_line = lines.next().ok_or("File did not contain a first header line")?;
+  if !first_line.contains(REQUIRED_HEADER) { Err(format!("First line did not contain {}", REQUIRED_HEADER))?  }
+
+  let mut nodes = Nodes{name: first_line.to_string(), ..Default::default()};
+
+  let mut parser = BulletFileParser{..Default::default()};
+  for line in lines {
+    match parser.handle_line(&line.to_string()) {
+      Err(e) => return Err(e.into()),
+      Ok(opt_node) => { if let Some(node) = opt_node { nodes.nodes.push(node); } }
+    };
+  }
+  return Ok(nodes);
 }
 
 /// Last node read that may be a parent to the current node
@@ -32,18 +48,19 @@ struct BulletFileParser
     parent_q: VecDeque<PotentialParent>,
 }
 
+/// Parses file with bullet points into node children
 impl BulletFileParser {
+  /// Push into to queue to potentially use as parent node later
   pub fn add_curr_as_pot_parent(&mut self, level: u32) {
     self.parent_q.push_back(PotentialParent{level: level, idx: self.file_order_cnt});
   }
 
+  /// Create nodes with their file order & tie them to their parent nodes using the indent level
   pub fn create_node(&mut self, text: &String, indent_level: u32) -> Node {
-    // TODO - have a runtime level logger for debug prints
-    println!("Creating node with text {} - level {}", text, indent_level);
     let mut new_node = Node{text: text.to_string(), level: indent_level, 
                         file_order: self.file_order_cnt, ..Default::default()};
-    // Since can guarantee reading the file in DFS order, can pop through the potential parent queue until we find our
-    // already read parent, or the queue is emptied so if the current doesn't use the parent, future nodes wont either
+    // A file will have the nodes in DFS order. So can pop through the potential parent queue until we find our current
+    // parent. So if its not the current nodes parent, can remove it since it wont be future node's parent either.
     while !self.parent_q.is_empty() {
       if let Some(ref pot_parent) = self.parent_q.back() {
         if pot_parent.level < new_node.level {
@@ -62,6 +79,7 @@ impl BulletFileParser {
     return new_node;
   }
 
+  /// Parse a file line & create a node if its a new bullet point
   pub fn handle_line(&mut self, line: &String) -> Result<Option<Node>, String> {
     if line.is_empty() { return Ok(None); }
     let start_of_node_match = START_NODE_BEGIN_REGEX.find(line);
@@ -81,26 +99,6 @@ impl BulletFileParser {
     }
     return Ok(None);
   }
-}
-
-pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
-  let bound_str = read_to_string(file_path)?;
-  let mut lines = bound_str.lines();
-
-  const REQUIRED_HEADER: &str = "(md-decision-trees)";
-  let first_line = lines.next().ok_or("File did not contain a first header line")?;
-  if !first_line.contains(REQUIRED_HEADER) { Err(format!("First line did not contain {}", REQUIRED_HEADER))?  }
-
-  let mut nodes = Nodes{name: first_line.to_string(), ..Default::default()};
-
-  let mut parser = BulletFileParser{..Default::default()};
-  for line in lines {
-    match parser.handle_line(&line.to_string()) {
-      Err(e) => return Err(e.into()),
-      Ok(opt_node) => { if let Some(node) = opt_node { nodes.nodes.push(node); } }
-    };
-  }
-  return Ok(nodes);
 }
 
 #[cfg(test)]
