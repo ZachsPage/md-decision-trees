@@ -1,9 +1,9 @@
 pub mod structs {
 
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use specta::Type;
 
-#[derive(Default, Serialize, Type)]
+#[derive(Default, Serialize, Deserialize, Type)]
 pub struct Node {
   pub text: String,
   pub file_order: u32, //< To ensure re-written file is in original order
@@ -11,7 +11,7 @@ pub struct Node {
   pub parent_idxs: Vec<u32>,
 }
 
-#[derive(Default, Serialize, Type)]
+#[derive(Default, Serialize, Deserialize, Type)]
 pub struct Nodes {
   pub name: String,
   pub nodes: Vec<Node>

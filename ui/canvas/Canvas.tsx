@@ -1,5 +1,5 @@
 import "./Canvas.css";
-import React, { useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {observer, inject} from 'mobx-react';
 import * as fromRust from "../bindings/bindings"
 import {CanvasElement} from "./CanvasElems"
@@ -14,27 +14,40 @@ interface CanvasProps {
 
 // What is drawn on / shows nodes
 export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}) => {
-  let renderer: Renderer | null;
-  let firstTime: boolean = true;
+  const [didMount, setDidMount] = useState(false);
 
-  useEffect(() => {
-    CanvasElement.parent = document.querySelector('.canvas') as HTMLElement;
-    const fileToLoad = firstTime ? "TEST_FILE:02_long_bullets.md" : canvasStore.filePath;
-    firstTime = false;
+  const loadFile = (fileToLoad: string) => {
     fromRust.getNodes(fileToLoad)
       .catch((error) => {
         errorStore.addError(`Error reading ${fileToLoad} - ${error}`);
       })
       .then((nodes: fromRust.Nodes | void) => {
         if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
-        console.log("Received nodes for {}", nodes.name);
-        renderer = new Renderer();
+        let renderer = new Renderer();
         renderer.renderNodes(nodes);
       });
+  }
 
-      // Example for mouse / key events
-      //document.addEventListener('mouseup', (event) => { panning.update(MouseState.Up, Point.fromMouse(event)); });
+  useEffect(() => {
+    setDidMount(true);
+    CanvasElement.parent = document.querySelector('.canvas') as HTMLElement;
+    const defaultFile = "TEST_FILE:02_long_bullets.md";
+    canvasStore.setFilePath(defaultFile);
+    loadFile(defaultFile);
+
+    // Example for mouse / key events
+    //document.addEventListener('mouseup', (event) => { panning.update(MouseState.Up, Point.fromMouse(event)); });
+  }, []);
+
+  useEffect(() => {
+    if (!didMount) { return; }
+    loadFile(canvasStore.filePath)
   }, [canvasStore.filePath]);
+
+  useEffect(() => {
+    if (!didMount || canvasStore.saveNodesToFilePath.length == 0) { return; }
+    canvasStore.setSaveNodesToFilePath("");
+  }, [canvasStore.saveNodesToFilePath]);
 
   return <div className="canvas"></div>;
 });

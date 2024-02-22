@@ -31,8 +31,13 @@ export const LeftToolbar : React.FC<LeftToolbarProps> = ({canvasStore}) => {
     }
   };
 
+  const saveNodesToOGFile = () => {
+    canvasStore.setSaveNodesToFilePath(canvasStore.filePath);
+  };
+
   return ( <div id="left-toolbar">
         <button onClick={openMarkdownFile}>Open File</button>
+        <button onClick={saveNodesToOGFile}>Save File</button>
       </div>
   );
 };

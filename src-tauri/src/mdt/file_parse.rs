@@ -1,10 +1,10 @@
 pub mod file_parse {
 
+use super::structs::{Node, Nodes};
 use std::path::PathBuf;
 use std::error::Error;
 use std::fs::read_to_string;
 use lazy_static::lazy_static;
-use super::structs::{Node, Nodes};
 use regex::Regex;
 use std::collections::VecDeque;
 
