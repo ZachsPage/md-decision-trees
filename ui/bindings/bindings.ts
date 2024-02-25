@@ -18,5 +18,5 @@ export function sendNodes(nodes: Nodes, filePath: string) {
     return invoke()<null>("send_nodes", { nodes,filePath })
 }
 
-export type Nodes = { name: string; nodes: Node[] }
+export type Nodes = { title: string; nodes: Node[] }
 export type Node = { text: string; file_order: number; level: number; parent_idxs: number[] }

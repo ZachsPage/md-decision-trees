@@ -2,7 +2,7 @@ import "./Canvas.css";
 import React, {useEffect, useState} from 'react';
 import {observer, inject} from 'mobx-react';
 import * as fromRust from "../bindings/bindings"
-import {CanvasElement} from "./CanvasElems"
+import {CanvasElement, Node} from "./CanvasElems"
 import {ErrorStore} from "../stores/ErrorStore"
 import {CanvasStore} from "../stores/CanvasStore"
 import {Renderer} from "./Render"
@@ -46,6 +46,9 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
 
   useEffect(() => {
     if (!didMount || canvasStore.saveNodesToFilePath.length == 0) { return; }
+    let nodesToSave: fromRust.Nodes = {title: Node.collectionTitle, nodes: []};
+    Node.collection.forEach((node: Node) => { if (node.dataNode) { nodesToSave.nodes.push(node.dataNode); } });
+    fromRust.sendNodes(nodesToSave, canvasStore.saveNodesToFilePath);
     canvasStore.setSaveNodesToFilePath("");
   }, [canvasStore.saveNodesToFilePath]);
 

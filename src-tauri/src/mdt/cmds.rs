@@ -5,7 +5,7 @@ pub mod cmds {
 
 use super::structs::Nodes;
 use super::file_parse::{parse_file, DATA_DIR};
-use super::file_write::{write_nodes_to_file};
+use super::file_write::write_nodes_to_file;
 
 use std::path::PathBuf;
 

@@ -33,6 +33,7 @@ export class Renderer {
   renderNodes(nodes : fromRust.Nodes) {
     this.cy.remove(this.cy.nodes());
     this.cy.remove(this.cy.edges());
+    Node.newCollection(nodes.title);
     nodes.nodes.forEach((node: fromRust.Node) => { this.renderNode(node); });
     this.cy.elements().layout({name: 'dagre'}).run();
     this.cy.fit();
@@ -45,8 +46,8 @@ export class Renderer {
     const nodeUUID = receivedNode.file_order.toString(); //< Must be string for type - reuse for unique ID
     newCanvasNode.cyNode = this.cy.add({group: "nodes", data: {id: nodeUUID, nodeData: newCanvasNode}});
     receivedNode.parent_idxs.forEach((parent_idx: number) => { // Connect to each parent
-      assert(parent_idx < Node.nodes.length); //< TODO - wont work for nodes linked to two parents - with one later
-      const parentNodeId = notNull(Node.nodes[parent_idx].cyNode.data().id);
+      assert(parent_idx < Node.collection.length); //< TODO - wont work for nodes linked to two parents - with one later
+      const parentNodeId = notNull(Node.collection[parent_idx].cyNode.data().id);
       const childNodeId = notNull(newCanvasNode.cyNode.data().id);
       this.cy.add({group: 'edges', data: {source: parentNodeId, target: childNodeId}})
     });
