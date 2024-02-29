@@ -4,9 +4,9 @@ import * as fromRust from "../bindings/bindings"
 import cytoscape from "cytoscape"
 import dagre from "cytoscape-dagre"
 
+type OnNodeClickCB = (clickedNode: fromRust.Node, x: number, y: number) => void;
+
 export class Renderer {
-  currX: number = 200;
-  currY: number = 0;
   cy = cytoscape({
     container: notNull(document.querySelector('.canvas')),
     // Interaction:
@@ -17,7 +17,7 @@ export class Renderer {
     styleEnabled: true,
   });
 
-  constructor() {
+  constructor(nodeClickCB :OnNodeClickCB) {
     // Set CSS
     this.cy.style()
       .selector('node').style(
@@ -26,8 +26,12 @@ export class Renderer {
          'text-valign': "center", 'text-halign': "center", 'text-wrap': "wrap", 'text-max-width': '200'})
     .update();
     cytoscape.use(dagre)
-    // Example for assigning events - 
-    //this.cy.on('drag', 'node', (evt) => { this.transferCyToCanvasNodePos(evt.target); });
+
+    this.cy.on('click', 'node', (evt) => { 
+      const node = evt.target;
+      const box = node.renderedBoundingBox({includeOverlays: false});
+      nodeClickCB(node.data().nodeData.dataNode, box.x1, box.y1);
+    });
   }
 
   renderNodes(nodes : fromRust.Nodes) {
