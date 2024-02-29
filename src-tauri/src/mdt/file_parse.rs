@@ -1,12 +1,16 @@
 pub mod file_parse {
 
+use super::structs::{Node, Nodes};
 use std::path::PathBuf;
 use std::error::Error;
 use std::fs::read_to_string;
 use lazy_static::lazy_static;
-use super::structs::{Node, Nodes};
 use regex::Regex;
 use std::collections::VecDeque;
+use std::convert::TryFrom;
+
+// TODO - preserve from original file or make configurable
+pub const NUM_SPACES_PER_LEVEL: u32 = 2;
 
 // For non-const statics
 lazy_static! {
@@ -23,7 +27,7 @@ pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
   let first_line = lines.next().ok_or("File did not contain a first header line")?;
   if !first_line.contains(REQUIRED_HEADER) { Err(format!("First line did not contain {}", REQUIRED_HEADER))?  }
 
-  let mut nodes = Nodes{name: first_line.to_string(), ..Default::default()};
+  let mut nodes = Nodes{title: first_line.to_string(), ..Default::default()};
 
   let mut parser = BulletFileParser{..Default::default()};
   for line in lines {
@@ -88,8 +92,8 @@ impl BulletFileParser {
         return Ok(Some(self.create_node(line, 0))); //< Parent node
       } else {
         let first_bullet_idx = line.find("*").unwrap();
-        // TODO - refactor this
-        let mut indent_level: u32 = (first_bullet_idx / 2).try_into().unwrap();
+        let expected_num_spaces = usize::try_from(NUM_SPACES_PER_LEVEL).map_err(|err| err.to_string())?;
+        let mut indent_level = u32::try_from(first_bullet_idx / expected_num_spaces).map_err(|err| err.to_string())?;
         indent_level += 1;
         return Ok(Some(self.create_node(&(&line[first_bullet_idx+2..]).to_string(), indent_level)));
       }
@@ -128,7 +132,7 @@ mod tests {
       assert!(nodes.nodes.len() == 10); //< Should match how many nodes are in the file
 
       // Get nodes for later testing & verify their names
-      let get_node_with_name = |idx: usize, name: &str| -> &Node { 
+      let get_node_with_name = |idx: u32, name: &str| -> &Node { 
         let node_at_idx = &nodes.nodes[idx];
         assert!(node_at_idx.text == name);
         return node_at_idx;

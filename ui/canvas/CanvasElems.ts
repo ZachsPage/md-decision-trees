@@ -13,11 +13,18 @@ export class CanvasElement {
 // Will hold information regarding decisions / pros / cons / etc. 
 // - Technically a CanvasElement, but not since nothing to display
 export class Node {
-  static nodes: Node[] = []
+  static collectionTitle: string = "";
+  static collection: Node[] = []
+  static newCollection(title: string) {
+    Node.collectionTitle = title;
+    Node.collection = [];
+  }
+
   dataNode: fromRust.Node | undefined = undefined;
   cyNode: any | undefined = undefined; //< TODO - get types for cytoscape.js
 
   constructor() { 
-    Node.nodes.push(this);
+    Node.collection.push(this);
   }
+
 }
