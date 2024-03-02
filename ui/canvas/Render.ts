@@ -4,7 +4,14 @@ import * as fromRust from "../bindings/bindings"
 import cytoscape from "cytoscape"
 import dagre from "cytoscape-dagre"
 
-type OnNodeClickCB = (clickedNode: fromRust.Node, x: number, y: number) => void;
+export class RenderBox {
+  x: number = 0;
+  y: number = 0;
+  height: number = 0;
+  width: number = 0;
+}
+
+type OnNodeClickCB = (clickedNode: fromRust.Node, box: RenderBox) => void;
 
 export class Renderer {
   cy = cytoscape({
@@ -29,8 +36,16 @@ export class Renderer {
 
     this.cy.on('click', 'node', (evt) => { 
       const node = evt.target;
-      const box = node.renderedBoundingBox({includeOverlays: false});
-      nodeClickCB(node.data().nodeData.dataNode, box.x1, box.y1);
+      const nodeBox = node.renderedBoundingBox({includeOverlays: false});
+      const canvasBox = notNull(this.cy.container()?.getBoundingClientRect());
+      //const box = new RenderBox;
+      const box: RenderBox = {
+        x: canvasBox.x + nodeBox.x1 - 10,
+        y: canvasBox.y + nodeBox.y1 - 10,
+        height: nodeBox.y2 - nodeBox.y1,
+        width: nodeBox.x2 - nodeBox.x1,
+      };
+      nodeClickCB(node.data().nodeData.dataNode, box);
     });
   }
 

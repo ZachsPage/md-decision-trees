@@ -5,35 +5,46 @@ import * as fromRust from "../bindings/bindings"
 import {CanvasElement, Node} from "./CanvasElems"
 import {ErrorStore} from "../stores/ErrorStore"
 import {CanvasStore} from "../stores/CanvasStore"
-import {Renderer} from "./Render"
+import {Renderer, RenderBox} from "./Render"
+import {notNull} from "../Utils"
 
 interface NodeEditTextBoxMethods {
-  setVisible: (text: string, x: number, y: number) => void;
+  setVisible: (text: string, box: RenderBox) => void;
   setVisibility: (visible: boolean) => void;
 }
 
 const NodeEditTextBox = forwardRef<NodeEditTextBoxMethods>((_, ref) => {
   const [visible, setVisibleState] = useState(false);
   const [text, setText] = useState("");
-  const [pos, setPos] = useState({x: 0, y: 0});
+  const [box, setBox] = useState(new RenderBox);
 
   // Expose functions to parent
-  const setVisible = (text: string, x: number, y: number) => {
+  const setVisible = (text: string, box: RenderBox) => {
     setText(text);
-    setPos({x: x, y: y})
+    setBox(box)
     setVisibleState(true); 
-    console.log("Set visible for ", text, x, y, visible);
   }
   const setVisibility = (visible: boolean) => { 
     setVisibleState(visible); 
     setText("");
   }
   useImperativeHandle(ref, () => ({ setVisible, setVisibility }));
+  
 
   return (
-    <textarea
-      style={{position:"absolute", left: `${pos.x}px`, top: `${pos.y}px`, display: visible ? 'block' : 'none'}}
-      value={text} onChange={(event) => { setText(event.target.value); }}/>
+    <textarea id="NodeEditTextBox"
+      style={{position:"absolute", display: visible ? 'block' : 'none',
+              left: `${box.x}px`, top: `${box.y}px`,
+              height: `${box.height}px`, width: `${box.width}px`}}
+      value={text} onChange={(event) => { 
+        setText(event.target.value);
+        // TODO - don't like this at all...
+        let thisHTML = notNull(document.getElementById("NodeEditTextBox"));
+        // https://stackoverflow.com/questions/76048428/html-textarea-why-does-textarea-style-height-textarea-scrollheight-px-exp
+        if (thisHTML.scrollHeight > thisHTML.clientHeight) {
+          thisHTML.style.height = thisHTML.scrollHeight + "px";
+        }
+      }}/>
   )
 });
 
@@ -49,14 +60,14 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
   const nodeEditTextBoxRef = useRef<typeof NodeEditTextBox>(null);
 
   // Mouse / keyboard Events
-  const onNodeClick = (node: fromRust.Node, x: number, y: number) => {
+  const onNodeClick = (node: fromRust.Node, box: RenderBox) => {
     selectedNode = node;
-    nodeEditTextBoxRef.current?.setVisible(selectedNode.text, x, y);
+    notNull(nodeEditTextBoxRef.current).setVisible(selectedNode.text, box);
   }
 
   const onCanvasClick = () => {
     selectedNode = null;
-    nodeEditTextBoxRef.current?.setVisibility(false);
+    notNull(nodeEditTextBoxRef.current).setVisibility(false);
   }
 
   const handleKeyboardShortcuts = (event: any) => {
