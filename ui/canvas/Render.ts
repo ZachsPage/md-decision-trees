@@ -49,6 +49,7 @@ export class Renderer {
     });
   }
 
+  // Render functions
   renderNodes(nodes : fromRust.Nodes) {
     this.cy.remove(this.cy.nodes());
     this.cy.remove(this.cy.edges());
@@ -70,5 +71,13 @@ export class Renderer {
       const childNodeId = notNull(newCanvasNode.cyNode.data().id);
       this.cy.add({group: 'edges', data: {source: parentNodeId, target: childNodeId}})
     });
+  }
+
+  // Public interaction functions
+  updateNodeData(node: fromRust.Node, attribute: string, value: any) {
+    // Edit the node text through the cy API to update the graph, then ensure the rerender doesn't affect the view
+    let cyNode = this.cy.getElementById(node.file_order.toString());
+    cyNode.data(`nodeData.dataNode.${attribute}`, value);
+    this.cy.elements().layout({name: 'dagre', fit: false, centerGraph: false}).run();
   }
 };

@@ -6,3 +6,7 @@
   cursor: grab;
   background-color: lightgrey
 }
+
+#NodeEditTextBox {
+  background-color: gray
+}
