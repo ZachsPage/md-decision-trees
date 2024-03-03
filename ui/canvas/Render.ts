@@ -4,9 +4,16 @@ import * as fromRust from "../bindings/bindings"
 import cytoscape from "cytoscape"
 import dagre from "cytoscape-dagre"
 
+export class RenderBox {
+  x: number = 0;
+  y: number = 0;
+  height: number = 0;
+  width: number = 0;
+}
+
+type OnNodeClickCB = (clickedNode: fromRust.Node, box: RenderBox) => void;
+
 export class Renderer {
-  currX: number = 200;
-  currY: number = 0;
   cy = cytoscape({
     container: notNull(document.querySelector('.canvas')),
     // Interaction:
@@ -17,7 +24,7 @@ export class Renderer {
     styleEnabled: true,
   });
 
-  constructor() {
+  constructor(nodeClickCB :OnNodeClickCB) {
     // Set CSS
     this.cy.style()
       .selector('node').style(
@@ -26,10 +33,23 @@ export class Renderer {
          'text-valign': "center", 'text-halign': "center", 'text-wrap': "wrap", 'text-max-width': '200'})
     .update();
     cytoscape.use(dagre)
-    // Example for assigning events - 
-    //this.cy.on('drag', 'node', (evt) => { this.transferCyToCanvasNodePos(evt.target); });
+
+    this.cy.on('click', 'node', (evt) => { 
+      const node = evt.target;
+      const nodeBox = node.renderedBoundingBox({includeOverlays: false});
+      const canvasBox = notNull(this.cy.container()?.getBoundingClientRect());
+      //const box = new RenderBox;
+      const box: RenderBox = {
+        x: canvasBox.x + nodeBox.x1 - 10,
+        y: canvasBox.y + nodeBox.y1 - 10,
+        height: nodeBox.y2 - nodeBox.y1,
+        width: nodeBox.x2 - nodeBox.x1,
+      };
+      nodeClickCB(node.data().nodeData.dataNode, box);
+    });
   }
 
+  // Render functions
   renderNodes(nodes : fromRust.Nodes) {
     this.cy.remove(this.cy.nodes());
     this.cy.remove(this.cy.edges());
@@ -51,5 +71,13 @@ export class Renderer {
       const childNodeId = notNull(newCanvasNode.cyNode.data().id);
       this.cy.add({group: 'edges', data: {source: parentNodeId, target: childNodeId}})
     });
+  }
+
+  // Public interaction functions
+  updateNodeData(node: fromRust.Node, attribute: string, value: any) {
+    // Edit the node text through the cy API to update the graph, then ensure the rerender doesn't affect the view
+    let cyNode = this.cy.getElementById(node.file_order.toString());
+    cyNode.data(`nodeData.dataNode.${attribute}`, value);
+    this.cy.elements().layout({name: 'dagre', fit: false, centerGraph: false}).run();
   }
 };

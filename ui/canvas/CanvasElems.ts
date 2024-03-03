@@ -11,7 +11,6 @@ export class CanvasElement {
 }
 
 // Will hold information regarding decisions / pros / cons / etc. 
-// - Technically a CanvasElement, but not since nothing to display
 export class Node {
   static collectionTitle: string = "";
   static collection: Node[] = []
