@@ -37,17 +37,17 @@ The goals of this project are to:
 ## Encoding Terms / Abbreviations
 To create the decision hierarchy, we'll use an encoding strategy for organization (`<Token>: ...` or `* <Token>: ...`):
 * `D`: Decision
-* `B`: Branch
+* `O`: Option
 * `P`: Pro
 * `C`: Con
 * `N`: Note
 
 ### Mapping Rules
-Decisions can have 1 to many Branches - labeled `B1` / `B2` / etc  
-Branches can become Decisions also - `B/D`  
-Pros / Cons associate with one to many Branches:
-* The association can be opposite - ex. a Pro for `B1` is a con for `B2`
-* This will likely be tracked with tokens like `P1B1C1B2`  
+Decisions can have 1 to many Options - labeled `O1` / `O2` / etc  
+Options can become Decisions also - `O/D`  
+Pros / Cons associate with one to many Options:
+* The association can be opposite - ex. a Pro for `O1` is a con for `O2`
+* This will likely be tracked with tokens like `P1O1C1O2`  
 
 Notes can be associated with one to many of any entity  
 

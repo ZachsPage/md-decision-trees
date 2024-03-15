@@ -19,4 +19,5 @@ export function sendNodes(nodes: Nodes, filePath: string) {
 }
 
 export type Nodes = { title: string; nodes: Node[] }
-export type Node = { text: string; file_order: number; level: number; parent_idxs: number[] }
+export type Node = { text: string; file_order: number; level: number; parent_idxs: number[]; type_is: NodeType | null }
+export type NodeType = "Decision" | "Option" | "Pro" | "Con" | "Note"
