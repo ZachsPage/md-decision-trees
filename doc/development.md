@@ -28,22 +28,26 @@ Here is a list of in order milestones to guide this project:
 * Start parsing bullet points - serialize the data to send to UI - done
 * Display a new node per bullet point - done
 * Integrate cytoscape (Use to layout graph, rebind current pan / zoom motions) - done
-* Figure out layout settings to have: Ds left -> right, B / P / C top to bottom - done?
+* Figure out layout settings to have: Ds left -> right, O / P / C top to bottom - done?
 * Display an error pop up - done
 * Skeleton layout of app toolbars - done
 * Add a quick way to allow a user to open a file - done
-* Ctrl+S to reserialize the UI content & write it back out to file (should match original)
-* Ctrl+click to edit a nodes text - should be able to save & update the file
-* Read a basic encoded file in Rust to get the D B P Cs - display type (see README.md)
-* Add color codes - Pro (green), Con (red), Decision (light orange) Branch (light blue), Notes (light yellow)
-* Context menu for canvas - create Decision - write update to file
-* Context menu for node - create B / P / C
-  * Make hot-keys to create elements
+* Ctrl+S to reserialize the UI content & write it back out to file (should match original) - done
+* Ctrl+click to edit a nodes text - should be able to save & update the file - done
+* Read a basic encoded file in Rust to get the D O P Cs - display type (see README.md) - done
+* Add color codes - Pro (green), Con (red), Decision (light orange) Option (light blue), Notes (light yellow)
+* Move selection with h j k l - manage with new MovementHandler
+* Creation - shortcut keys only:
+  * ctrl+c to enter creation state, then either d o p c n - manage with new CreationHandler
+  * None selected - can create a D - add to graph and allow typing - write update to file
+  * Node selected:
+    * D - can create D or O - send error if press something else
+    * O - can create D, P, C
 * Side menu to show hot-key / color coding help
 * Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
 * Make relationships collapsible
 * Make nodes collapsible (only show partial text)
-* Filter what is being viewed - Ds, Bs, Ps, Cs, Ns - change through view modal
+* Filter what is being viewed - Ds, Os, Ps, Cs, Ns - change through view modal
 * Create color scheme to make UI look better
 * Figure out bundling
 * Replace quick file opener with a file explorer in the left toolbar

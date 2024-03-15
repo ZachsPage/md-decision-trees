@@ -27,8 +27,10 @@ const NodeEditTextBox = forwardRef<NodeEditTextBoxMethods>((_, ref) => {
     setText(newText);
     setBox(box);
     setVisibleState(true); 
-    console.log(newText.length)
-    notNull(htmlRef.current).setSelectionRange(newText.length, newText.length); //< Put cursor at end - TODO, fix?
+    // Set value here to enable putting the cursor at the end
+    let html = notNull(htmlRef.current);
+    html.value = newText;
+    html.setSelectionRange(newText.length, newText.length);
   }
   const setVisibility = (visible: boolean) => { setVisibleState(visible); }
   const getText = (): string => { return text; }
