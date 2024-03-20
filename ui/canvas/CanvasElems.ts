@@ -25,5 +25,4 @@ export class Node {
   constructor() { 
     Node.collection.push(this);
   }
-
 }
