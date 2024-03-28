@@ -6,11 +6,12 @@ import * as fromRust from "../bindings/bindings"
 import {ErrorStore} from "../stores/ErrorStore"
 import {CanvasStore} from "../stores/CanvasStore"
 import {notNull} from "../Utils"
+import { NodeCreator } from "./key_handlers/NodeCreator"
 import {observer} from 'mobx-react';
 import React, {useEffect, useState, useRef} from 'react';
 
 // Passes information needed for selected node
-class SelectedNode {
+export class SelectedNode {
   node: fromRust.Node | null = null
   box: RenderBox | null = null
   beingEdited: boolean = false
@@ -26,15 +27,16 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
   const [didMount, setDidMount] = useState(false);
   const nodeEditTextBoxRef = useRef<typeof NodeEditTextBox>(null);
   let renderer: Renderer | null = null;
+  let nodeCreator: NodeCreator | null = null;
   let selectedNode: SelectedNode | null = null;
 
   // Mouse / keyboard Events
   const onNodeClick = (node: fromRust.Node, box: RenderBox) => {
-    selectedNode = {node: node, box: box, beingEdited: false};
+    setSelectedNode({node: node, box: box, beingEdited: false});
   }
 
   const onCanvasClick = () => {
-    selectedNode = null;
+    setSelectedNode(null);
     notNull(nodeEditTextBoxRef.current).setVisibility(false);
   }
 
@@ -52,6 +54,11 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
   }
 
   // Helper Functions
+  const setSelectedNode = (newNode: SelectedNode | null) => {
+    selectedNode = newNode;
+    nodeCreator?.setSelectedNode(selectedNode);
+  }
+
   const loadFile = (fileToLoad: string) => {
     fromRust.getNodes(fileToLoad)
       .catch((error) => {
@@ -61,6 +68,7 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
         if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
         renderer = new Renderer(onNodeClick);
         renderer.renderNodes(nodes);
+        nodeCreator = new NodeCreator(renderer);
       });
   }
 

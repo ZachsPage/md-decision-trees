@@ -35,14 +35,17 @@ Here is a list of in order milestones to guide this project:
 * Ctrl+S to reserialize the UI content & write it back out to file (should match original) - done
 * Ctrl+click to edit a nodes text - should be able to save & update the file - done
 * Read a basic encoded file in Rust to get the D O P Cs - display type (see README.md) - done
-* Add color codes - Pro (green), Con (red), Decision (light orange) Option (light blue), Notes (light yellow)
-* Move selection with h j k l - manage with new MovementHandler
-* Creation - shortcut keys only:
+* Add color codes - Pro (green), Con (red), Decision (light orange) Option (light blue), Notes (light yellow) - done
+* Create / delete nodes - shortcut keys:
   * ctrl+c to enter creation state, then either d o p c n - manage with new CreationHandler
-  * None selected - can create a D - add to graph and allow typing - write update to file
+  * None selected - can create a D - add to graph and allow typing - write update to file in correct order
   * Node selected:
     * D - can create D or O - send error if press something else
     * O - can create D, P, C
+  * ctrl+d to delete - pop up for yes / no
+  * Create as parent instead - ctrl+c, ctrl+p, then d o n
+    * Or, maybe do ctrl+j to create down & ctrl+k to create up?
+* Move selection with h j k l - manage with new MovementHandler
 * Side menu to show hot-key / color coding help
 * Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
 * Make relationships collapsible

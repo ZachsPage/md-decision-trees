@@ -23,7 +23,22 @@ export class Renderer {
     // Edit the node text through the cy API to update the graph, then ensure the rerender doesn't affect the view
     let cyNode = this.cy.getElementById(node.file_order.toString());
     cyNode.data(`nodeData.dataNode.${attribute}`, value);
-    this.cy.elements().layout({name: 'dagre', fit: false, centerGraph: false}).run();
+    this.rerender();
+  }
+
+  createNode(parent: fromRust.Node, type: fromRust.NodeType) {
+    console.log("Creating node - ", type);
+    /* //TODO - this is an outline of what will need done after some refactoring from node_create_delete ADR
+    let parentCyNode = this.cy.getElementById(parent.file_order.toString());
+    let newNode: fromRust.Node = {
+      text: "", file_order: // Get right most child node's file_order, then increase by 1
+      level: //< Parent's + 1, parent_idx: //< Not used when writing to file - so not important
+      type_is: type
+    };
+    let newCanvasNode = this.renderNode(newNode);
+    this.rerender();
+    this.onNodeClick(newCanvasNode.cyNode);
+    */
   }
 
   // Render functions
@@ -32,12 +47,10 @@ export class Renderer {
     this.cy.remove(this.cy.edges());
     Node.newCollection(nodes.title);
     nodes.nodes.forEach((node: fromRust.Node) => { this.renderNode(node); });
-    this.cy.elements().layout({name: 'dagre'}).run();
-    this.cy.fit();
-    this.cy.zoom(1);
+    this.rerender(true);
   }
 
-  renderNode(receivedNode: fromRust.Node) {
+  renderNode(receivedNode: fromRust.Node) : Node {
     let newCanvasNode = new Node();
     newCanvasNode.dataNode = receivedNode;
     const nodeUUID = receivedNode.file_order.toString(); //< Must be string for type - reuse for unique ID
@@ -48,6 +61,14 @@ export class Renderer {
       const childNodeId = notNull(newCanvasNode.cyNode.data().id);
       this.cy.add({group: 'edges', data: {source: parentNodeId, target: childNodeId}})
     });
+    return newCanvasNode;
+  }
+
+  rerender(resetView: boolean = false) {
+    let layoutArgs: any = {name: 'dagre'};
+    if (!resetView) { layoutArgs = {...layoutArgs, fit: false, centerGraph: false}; }
+    this.cy.elements().layout(layoutArgs).run();
+    if (resetView) { this.cy.fit(); this.cy.zoom(1); }
   }
 
   // Members & init
@@ -67,7 +88,7 @@ export class Renderer {
     // Inits
     this.nodeClickCB = nodeClickCB;
     // Binds
-    this.cy.on('click', 'node', (evt) => { this.onNodeClick(evt.target) });
+    this.cy.on('click', 'node', (evt) => { this.onNodeSelect(evt.target) });
     // Set node CSS
     this.cy.style()
       .selector('node').style(
@@ -84,11 +105,10 @@ export class Renderer {
   }
 
   // Interaction functions
-  onNodeClick(cyNode: cytoscape.NodeSingular) {
+  onNodeSelect(cyNode: cytoscape.NodeSingular) {
     const nodeBox = cyNode.renderedBoundingBox({includeOverlays: false});
     const canvasBox = notNull(this.cy.container()?.getBoundingClientRect());
     const renderOffset = 10;
-    console.log("Style is ", cyNode.style("text-background-color"));
     const nodeRenderOutline: RenderBox = {
       x: canvasBox.x + nodeBox.x1 - renderOffset, width: nodeBox.x2 - nodeBox.x1,
       y: canvasBox.y + nodeBox.y1 - renderOffset, height: nodeBox.y2 - nodeBox.y1,
