@@ -117,4 +117,14 @@ export class Renderer {
     // Give user the unwrapped node & its render positions to allow drawing over it
     notNull(this.nodeClickCB)(cyNode.data().nodeData.dataNode, nodeRenderOutline);
   }
+
+  getNodes(): fromRust.Node[] {
+    let visitedNodes: fromRust.Node[] = [];
+    console.log("GetNodes called")
+    this.cy.elements().dfs({root: this.cy.nodes(), visit: ((curr, edge, prev, idx, depth) => {
+      console.log("Visited ", curr.data().nodeData.dataNode.text)
+    })});
+    console.log("GetNodes done")
+    return visitedNodes;
+  }
 };

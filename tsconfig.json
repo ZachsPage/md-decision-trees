@@ -21,6 +21,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["ui"],
-  "exclude": ["src-tauri/test/data*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

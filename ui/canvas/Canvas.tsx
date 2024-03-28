@@ -84,6 +84,15 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
     }
   }
 
+  const saveNodesToPath = (filePath: string) => {
+    // TODO - Seems like shouldnt be using a Functional component here... use a Component instead
+    // - The renderer state is not being shared - selectedNode is working due to the binds...
+    console.log(`saveNodesToPath '${filePath}' - renderer is ${renderer}`);
+    let nodesToSave: fromRust.Nodes = {title: Node.collectionTitle, nodes: []};
+    Node.collection.forEach((node: Node) => { if (node.dataNode) { nodesToSave.nodes.push(node.dataNode); } });
+    fromRust.sendNodes(nodesToSave, filePath);
+  }
+
   // State Change Updates
   useEffect(() => {
     setDidMount(true);
@@ -101,9 +110,7 @@ export const Canvas: React.FC<CanvasProps> = observer(({errorStore, canvasStore}
 
   useEffect(() => {
     if (!didMount || canvasStore.saveNodesToFilePath.length == 0) { return; }
-    let nodesToSave: fromRust.Nodes = {title: Node.collectionTitle, nodes: []};
-    Node.collection.forEach((node: Node) => { if (node.dataNode) { nodesToSave.nodes.push(node.dataNode); } });
-    fromRust.sendNodes(nodesToSave, canvasStore.saveNodesToFilePath);
+    saveNodesToPath(canvasStore.saveNodesToFilePath);
     canvasStore.setSaveNodesToFilePath("");
   }, [canvasStore.saveNodesToFilePath]);
 

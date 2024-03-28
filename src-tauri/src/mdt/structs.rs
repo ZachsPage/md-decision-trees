@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 // TODO - may be able to leverage complex enums to do a combo Pro Con tracing to multiple nodes?
-#[derive(Serialize, Deserialize, Type)]
+#[derive(Serialize, Deserialize, Type, Copy, Clone)]
 pub enum NodeType { 
   Decision, Option,
   Pro, Con,
@@ -31,6 +31,14 @@ impl FromStr for NodeType {
         "N" => Ok(NodeType::Note),
         _ => Err(()),
     }
+  }
+}
+
+pub fn to_node_start_string(type_is: &NodeType) -> Result<String, ()> {
+  match type_is {
+      NodeType::Decision => Ok(String::from("D: ")), NodeType::Option => Ok(String::from("O: ")), 
+      NodeType::Pro => Ok(String::from("P: ")), NodeType::Con => Ok(String::from("C: ")), 
+      NodeType::Note=> Ok(String::from("N: "))
   }
 }
 
