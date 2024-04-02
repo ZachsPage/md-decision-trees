@@ -7,10 +7,9 @@ export default defineConfig(async () => ({
     react({
       babel: {
           plugins: [
-              [
-                  "@babel/plugin-proposal-class-properties",
-                  { loose: true },
-              ],
+              ["@babel/plugin-proposal-class-properties"],
+              ["@babel/plugin-transform-class-properties"],
+              ["@babel/plugin-proposal-decorators", {"decoratorsBeforeExport": true}],
           ],
           assumptions: {
               "setPublicClassFields": false

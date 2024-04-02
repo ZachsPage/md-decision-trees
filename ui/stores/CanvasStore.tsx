@@ -21,3 +21,5 @@ export class CanvasStore {
     this.saveNodesToFilePath = newFilePath;
   }
 }
+
+export const canvasStore = new CanvasStore();

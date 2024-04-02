@@ -18,7 +18,6 @@ export class ErrorStore {
     console.log(newError);
     this.errors.push(newError);
     this.has_new_errors = true;
-    console.log("From store ", this.has_new_errors);
   }
 
   clearNewErrorFlag = () => {
@@ -29,3 +28,5 @@ export class ErrorStore {
     return this.errors.slice().reverse();
   }
 }
+
+export const errorStore = new ErrorStore();

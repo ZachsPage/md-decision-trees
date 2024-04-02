@@ -119,12 +119,11 @@ export class Renderer {
   }
 
   getNodes(): fromRust.Node[] {
+    // Get the nodes in DFS order since this will match the layout of the file
     let visitedNodes: fromRust.Node[] = [];
-    console.log("GetNodes called")
-    this.cy.elements().dfs({root: this.cy.nodes(), visit: ((curr, edge, prev, idx, depth) => {
-      console.log("Visited ", curr.data().nodeData.dataNode.text)
+    this.cy.nodes().dfs({root: "*", visit: ((curr, edge, prev, idx, depth) => {
+      visitedNodes.push(curr.data().nodeData.dataNode);
     })});
-    console.log("GetNodes done")
     return visitedNodes;
   }
 };

@@ -24,6 +24,7 @@ export const LeftToolbar : React.FC<LeftToolbarProps> = ({canvasStore}) => {
       const filePath = await open({
         title: "Open MD Decision File", filters: [{name: "mds", extensions: ['md']}], multiple: false});
       if (filePath) {
+        canvasStore.setFilePath(""); //< clear first to ensure update
         canvasStore.setFilePath(filePath);
       }
     } catch(err) {
@@ -31,7 +32,8 @@ export const LeftToolbar : React.FC<LeftToolbarProps> = ({canvasStore}) => {
     }
   };
 
-  const saveNodesToOGFile = () => {
+  const saveNodesToOGFile = () => { 
+    canvasStore.setSaveNodesToFilePath(""); //< clear first to ensure update
     canvasStore.setSaveNodesToFilePath(canvasStore.filePath);
   };
 
