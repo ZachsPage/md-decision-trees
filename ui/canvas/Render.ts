@@ -46,20 +46,21 @@ export class Renderer {
     this.cy.remove(this.cy.nodes());
     this.cy.remove(this.cy.edges());
     Node.newCollection(nodes.title);
-    nodes.nodes.forEach((node: fromRust.Node) => { this.renderNode(node); });
+    nodes.nodes.forEach((node: fromRust.Node) => { 
+      let parentIDs = node.parent_idxs.map(id => id.toString());
+      this.renderNode(node, parentIDs); 
+    });
     this.rerender(true);
   }
 
-  renderNode(receivedNode: fromRust.Node) : Node {
+  renderNode(newNode: fromRust.Node, parentIDs: string[]) : Node {
     let newCanvasNode = new Node();
-    newCanvasNode.dataNode = receivedNode;
-    const nodeUUID = receivedNode.file_order.toString(); //< Must be string for type - reuse for unique ID
+    newCanvasNode.dataNode = newNode;
+    const nodeUUID = newNode.file_order.toString(); //< Must be string for type - reuse for unique ID
     newCanvasNode.cyNode = this.cy.add({group: "nodes", data: {id: nodeUUID, nodeData: newCanvasNode}});
-    receivedNode.parent_idxs.forEach((parent_idx: number) => { // Connect to each parent
-      assert(parent_idx < Node.collection.length); //< TODO - wont work for nodes linked to two parents - with one later
-      const parentNodeId = notNull(Node.collection[parent_idx].cyNode.data().id);
-      const childNodeId = notNull(newCanvasNode.cyNode.data().id);
-      this.cy.add({group: 'edges', data: {source: parentNodeId, target: childNodeId}})
+    parentIDs.forEach((parentNodeID: string) => { // Connect to each parent
+      const childNodeID = notNull(newCanvasNode.cyNode.data().id);
+      this.cy.add({group: 'edges', data: {source: parentNodeID, target: childNodeID}})
     });
     return newCanvasNode;
   }
@@ -119,7 +120,7 @@ export class Renderer {
   }
 
   getNodes(): fromRust.Node[] {
-    // Get the nodes in DFS order since this will match the layout of the file
+    // Get the nodes in DFS order since this will match the layout of the files
     let visitedNodes: fromRust.Node[] = [];
     this.cy.nodes().dfs({root: "*", visit: ((curr, edge, prev, idx, depth) => {
       visitedNodes.push(curr.data().nodeData.dataNode);
