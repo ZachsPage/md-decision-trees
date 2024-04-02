@@ -41,7 +41,7 @@
   overflow-y: scroll; /* Enable & always show scrollbar */
   max-height: calc(100% - 75px);
   padding: 5px;
-  line-height: 10px; /* Separation per new error */
+  line-height: 20px; /* Separation per new error */
 }
 
 /* Set the style of the scroll bar*/
