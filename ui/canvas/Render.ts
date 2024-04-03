@@ -26,19 +26,30 @@ export class Renderer {
     this.rerender();
   }
 
-  createNode(parent: fromRust.Node, type: fromRust.NodeType) {
-    console.log("Creating node - ", type);
-    /* //TODO - this is an outline of what will need done after some refactoring from node_create_delete ADR
-    let parentCyNode = this.cy.getElementById(parent.file_order.toString());
+  focusOnNode(cyNode: cytoscape.NodeSingular) {
+    this.cy.fit(cyNode);
+    this.cy.zoom(1);
+  }
+
+  createNode(parent: fromRust.Node | undefined | null, type: fromRust.NodeType) : Node {
     let newNode: fromRust.Node = {
-      text: "", file_order: // Get right most child node's file_order, then increase by 1
-      level: //< Parent's + 1, parent_idx: //< Not used when writing to file - so not important
+      text: "Placeholder text",  //< TODO - if this is unset, cannot see node due to width & height based on label
+      file_order: this.getNewNodesFileOrder(parent),
+      level: parent ? parent.level + 1 : 0,
+      parent_idxs: parent ? [parent.file_order] : [],
       type_is: type
     };
-    let newCanvasNode = this.renderNode(newNode);
-    this.rerender();
-    this.onNodeClick(newCanvasNode.cyNode);
-    */
+    const newCanvasNode = this.renderNode(newNode, newNode.parent_idxs.map(x => x.toString()));
+    return newCanvasNode;
+  }
+
+  getNodes(): fromRust.Node[] {
+    // Get the nodes in DFS order since this will match the layout of the files
+    let visitedNodes: fromRust.Node[] = [];
+    this.cy.nodes().dfs({root: "*", visit: ((curr, edge, prev, idx, depth) => {
+      visitedNodes.push(curr.data().nodeData.dataNode);
+    })});
+    return visitedNodes;
   }
 
   // Render functions
@@ -72,7 +83,7 @@ export class Renderer {
     if (resetView) { this.cy.fit(); this.cy.zoom(1); }
   }
 
-  // Members & init
+  // Members
   cy = cytoscape({
     container: notNull(document.querySelector('.canvas')),
     // Interaction:
@@ -85,11 +96,12 @@ export class Renderer {
 
   nodeClickCB: OnNodeClickCB | null = null;
 
-  constructor(nodeClickCB :OnNodeClickCB) {
+  // Init
+  constructor(nodeClickCB : OnNodeClickCB) {
     // Inits
     this.nodeClickCB = nodeClickCB;
     // Binds
-    this.cy.on('click', 'node', (evt) => { this.onNodeSelect(evt.target) });
+    this.cy.on('click', 'node', (evt: any) => { this.onNodeSelect(evt.target); });
     // Set node CSS
     this.cy.style()
       .selector('node').style(
@@ -105,7 +117,7 @@ export class Renderer {
     cytoscape.use(dagre)
   }
 
-  // Interaction functions
+  // User interaction functions
   onNodeSelect(cyNode: cytoscape.NodeSingular) {
     const nodeBox = cyNode.renderedBoundingBox({includeOverlays: false});
     const canvasBox = notNull(this.cy.container()?.getBoundingClientRect());
@@ -119,12 +131,14 @@ export class Renderer {
     notNull(this.nodeClickCB)(cyNode.data().nodeData.dataNode, nodeRenderOutline);
   }
 
-  getNodes(): fromRust.Node[] {
-    // Get the nodes in DFS order since this will match the layout of the files
-    let visitedNodes: fromRust.Node[] = [];
-    this.cy.nodes().dfs({root: "*", visit: ((curr, edge, prev, idx, depth) => {
-      visitedNodes.push(curr.data().nodeData.dataNode);
+  // Helper functions
+  getNewNodesFileOrder(parent: fromRust.Node | undefined | null): number {
+    let nodeIDToFindMaxFrom = parent ? parent.file_order.toString() : this.cy.nodes().roots().last().data().id;
+    let maxFileOrderFromParent: number = 0;
+    this.cy.elements().dfs({root: `#${nodeIDToFindMaxFrom}`, visit: ((curr, edge, prev, idx, depth) => {
+      maxFileOrderFromParent = Math.max(maxFileOrderFromParent, curr.data().nodeData.dataNode.file_order);
     })});
-    return visitedNodes;
+    maxFileOrderFromParent = 12;
+    return maxFileOrderFromParent + 1;
   }
 };

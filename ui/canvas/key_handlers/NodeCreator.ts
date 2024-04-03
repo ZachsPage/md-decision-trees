@@ -1,4 +1,4 @@
-import { SelectedNode } from "../Canvas";
+import { Canvas, SelectedNode } from "../Canvas";
 import { Renderer } from "../Render";
 import { notNull } from "../../Utils"
 import * as fromRust from "../../bindings/bindings"
@@ -8,36 +8,35 @@ enum State {
   ReadyToCreate
 }
 
+// Handles creating nodes
 export class NodeCreator {
   state: State = State.None;
-  selectedNode: SelectedNode | null = null;
+  canvas: Canvas | null;
   render: Renderer | null;
-
-  setSelectedNode(newNode: SelectedNode | null) {
-    this.selectedNode = newNode;
-  }
 
   handleKeyboardShortcuts(event: any) {
     if (event.ctrlKey) {
-      if (event.key === 'c' && this.selectedNode) {
+      if (event.key === 'c') {
         this.state = State.ReadyToCreate;
       }
     } else if (this.state == State.ReadyToCreate) {
       this.state = State.None;
-      if (this.selectedNode) {
-        let typeStr = this.getNodeTypeStringFromKey(event.key)
-        if (typeStr) { this.createNodeOnSelected(typeStr); }
-      }
+      let typeStr = this.getNodeTypeStringFromPressedKey(event.key)
+      if (typeStr) { this.createNodeOnSelected(typeStr); }
     }
   }
 
   createNodeOnSelected(type: String) {
-    if (!this.canCreateTypeOnParent("parent_type", type)) { return; }
-    let parentNode = notNull(this?.selectedNode?.node);
-    this.render?.createNode(parentNode, type as fromRust.NodeType);
+    let optParentNode = this?.canvas?.getSelectedNode()?.node;
+    if (!this.canCreateTypeOnParent(optParentNode?.type_is, type)) { return; }
+    let renderer = notNull(this.render);
+    let newNode = notNull(renderer.createNode(optParentNode, type as fromRust.NodeType));
+    renderer.focusOnNode(newNode.cyNode);
+    renderer.onNodeSelect(newNode.cyNode);
+    this.canvas?.editSelectedNode();
   }
 
-  getNodeTypeStringFromKey(key: String): String | null {
+  getNodeTypeStringFromPressedKey(key: String): String | null {
     if (key === 'd') { return "Decision";
     } else if (key === 'o') { return "Option";
     } else if (key === 'p') { return "Pro";
@@ -46,12 +45,16 @@ export class NodeCreator {
     } return null;
   }
 
-  canCreateTypeOnParent(parent_type: String, new_type: String): Boolean {
-    // TODO - ensure this creation is valid based on types
-    return true;
+  canCreateTypeOnParent(parentType: String | undefined | null, newType: String): Boolean {
+    if (newType == "Note") { return true; }
+    if (!parentType) { return newType == "Decision"; }
+    if (parentType == "Decision") { return newType == "Option"; }
+    if (parentType == "Option") { return newType == "Pro" || newType == "Con"; }
+    return false;
   }
 
-  constructor(render: Renderer) {
+  constructor(canvas: Canvas, render: Renderer) {
+    this.canvas = canvas;
     this.render = render;
     document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
   }

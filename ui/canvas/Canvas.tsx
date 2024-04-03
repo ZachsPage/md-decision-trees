@@ -39,7 +39,7 @@ export class Canvas extends React.Component {
   handleKeyboardShortcuts(event: any) {
     if (event.ctrlKey) {
       if (event.key === 'e' && this.selectedNode) {
-        this.handleNodeTextEdit(this.selectedNode);
+        this.editSelectedNode();
       }
     }
   }
@@ -52,23 +52,10 @@ export class Canvas extends React.Component {
   // Helper Functions
   setSelectedNode(newNode: SelectedNode | null) {
     this.selectedNode = newNode;
-    this.nodeCreator?.setSelectedNode(this.selectedNode);
   }
 
-  loadFile(fileToLoad: string) {
-    fromRust.getNodes(fileToLoad)
-      .catch((error) => {
-        errorStore.addError(`Error reading ${fileToLoad} - ${error}`);
-      })
-      .then((nodes: fromRust.Nodes | void) => {
-        if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
-        this.renderer = new Renderer( (node, box) => {this.onNodeClick(node, box);});
-        this.renderer.renderNodes(nodes);
-        this.nodeCreator = new NodeCreator(this.renderer);
-      });
-  }
-
-  handleNodeTextEdit(currNode: SelectedNode) {
+  editSelectedNode() {
+    let currNode = notNull(this.selectedNode);
     const textBox = notNull(this?.nodeEditTextBoxRef?.current), node = notNull(currNode.node);
     if (!currNode.beingEdited) {
       currNode.beingEdited = true;
@@ -78,6 +65,24 @@ export class Canvas extends React.Component {
       this.renderer?.updateNodeData(node, "text", textBox.getText())
       textBox.setVisibility(false)
     }
+  }
+
+  getSelectedNode() : SelectedNode | null {
+    return this.selectedNode;
+  }
+  
+  // File functions
+  loadFile(fileToLoad: string) {
+    fromRust.getNodes(fileToLoad)
+      .catch((error) => {
+        errorStore.addError(`Error reading ${fileToLoad} - ${error}`);
+      })
+      .then((nodes: fromRust.Nodes | void) => {
+        if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
+        this.renderer = new Renderer( (node, box) => {this.onNodeClick(node, box);});
+        this.renderer.renderNodes(nodes);
+        this.nodeCreator = new NodeCreator(this, this.renderer);
+      });
   }
 
   saveNodesToPath(filePath: string) {
