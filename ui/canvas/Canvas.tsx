@@ -14,6 +14,7 @@ import React from 'react';
 // Passes information needed for selected node
 export class SelectedNode {
   node: fromRust.Node | null = null
+  renderID: string = ""
   box: RenderBox | null = null
   beingEdited: boolean = false
 }
@@ -27,8 +28,8 @@ export class Canvas extends React.Component {
   selectedNode: SelectedNode | null = null;
 
   // Mouse / keyboard Events
-  onNodeClick(node: fromRust.Node, box: RenderBox) {
-    this.setSelectedNode({node: node, box: box, beingEdited: false});
+  onNodeClick(selectedNode: SelectedNode) {
+    this.setSelectedNode(selectedNode);
   }
 
   onCanvasClick() {
@@ -54,15 +55,16 @@ export class Canvas extends React.Component {
     this.selectedNode = newNode;
   }
 
-  editSelectedNode() {
-    let currNode = notNull(this.selectedNode);
-    const textBox = notNull(this?.nodeEditTextBoxRef?.current), node = notNull(currNode.node);
-    if (!currNode.beingEdited) {
-      currNode.beingEdited = true;
-      textBox.setVisible(node.text, currNode.box);
+  editSelectedNode(initialText?: string) {
+    let selection = notNull(this.selectedNode);
+    const textBox = this?.nodeEditTextBoxRef?.current;
+    if (!textBox) { return; } //< TODO - this is null sometimes, so just return
+    if (!selection.beingEdited) {
+      selection.beingEdited = true;
+      textBox.setVisible(initialText !== undefined ? initialText : selection.node.text, selection.box);
     } else {
-      currNode.beingEdited = false;
-      this.renderer?.updateNodeData(node, "text", textBox.getText())
+      selection.beingEdited = false;
+      this.renderer?.updateNodeData(selection.renderID, "text", textBox.getText())
       textBox.setVisibility(false)
     }
   }
@@ -79,7 +81,7 @@ export class Canvas extends React.Component {
       })
       .then((nodes: fromRust.Nodes | void) => {
         if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
-        this.renderer = new Renderer( (node, box) => {this.onNodeClick(node, box);});
+        this.renderer = new Renderer( (node: SelectedNode) => {this.onNodeClick(node);});
         this.renderer.renderNodes(nodes);
         this.nodeCreator = new NodeCreator(this, this.renderer);
       });

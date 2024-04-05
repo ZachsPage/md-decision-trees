@@ -14,7 +14,7 @@ export class NodeCreator {
   canvas: Canvas | null;
   render: Renderer | null;
 
-  handleKeyboardShortcuts(event: any) {
+  handleKeyboardShortcuts(event: KeyboardEvent) {
     if (event.ctrlKey) {
       if (event.key === 'c') {
         this.state = State.ReadyToCreate;
@@ -23,6 +23,7 @@ export class NodeCreator {
       this.state = State.None;
       let typeStr = this.getNodeTypeStringFromPressedKey(event.key)
       if (typeStr) { this.createNodeOnSelected(typeStr); }
+      event.preventDefault(); //< Stops key from entering node text on creation
     }
   }
 
@@ -33,7 +34,7 @@ export class NodeCreator {
     let newNode = notNull(renderer.createNode(optParentNode, type as fromRust.NodeType));
     renderer.focusOnNode(newNode.cyNode);
     renderer.onNodeSelect(newNode.cyNode);
-    this.canvas?.editSelectedNode();
+    this.canvas?.editSelectedNode(""); //< Clear placeholder text used to give node initial size
   }
 
   getNodeTypeStringFromPressedKey(key: String): String | null {
