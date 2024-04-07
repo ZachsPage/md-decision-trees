@@ -1,7 +1,8 @@
 import {Node} from "./CanvasElems"
 import {getNodeColor} from "./Utils"
-import {assert, notNull} from "../Utils"
-import {SelectedNode} from "./Canvas"
+import {notNull} from "../Utils"
+import {SelectedNode} from "./key_handlers/NodeSelector"
+import {DFS, NodeTraverseSelection} from "./NodeTraveseral"
 import * as fromRust from "../bindings/bindings"
 import cytoscape from "cytoscape"
 import dagre from "cytoscape-dagre"
@@ -15,22 +16,6 @@ export class RenderBox {
   color: string = ""
 }
 
-// Had to make this since couldn't figure out why the built in dfs was going top / right / left
-class DFS {
-  visitedNodes: fromRust.Node[] = []
-  constructor(rootNodes: cytoscape.NodeCollection) {
-    rootNodes.forEach((node: cytoscape.NodeSingular) => this.continueDFS(node));
-  }
-  continueDFS(currNode: cytoscape.NodeSingular) {
-    this.visitedNodes.push(currNode.data().nodeData.dataNode);
-    currNode.outgoers().forEach((edge: cytoscape.EdgeSingular) => {
-      edge.targets().forEach((child: cytoscape.NodeSingular) => {
-        this.continueDFS(child)
-      });
-    });
-  }
-};
-
 // Triggered when a node is clicked
 type OnNodeClickCB = (selectedNode: SelectedNode) => void;
 
@@ -43,8 +28,13 @@ export class Renderer {
     this.doLayout();
   }
 
-  focusOnNode(cyNode: cytoscape.NodeSingular) {
-    this.cy.fit(cyNode, /*padding*/ 120);
+  focusOnNode(cyNode: cytoscape.NodeSingular, padding: number = 120) {
+    this.cy.fit(cyNode, padding);
+  }
+  
+  newNodeTraverseSelection(optStartingNode: SelectedNode | null): NodeTraverseSelection | null {
+    const cyNodeStart = optStartingNode ? this.cy.getElementById(optStartingNode.renderID) : this.cy.nodes().roots()[0];
+    return new NodeTraverseSelection(this, cyNodeStart);
   }
 
   createNode(parent: fromRust.Node | undefined | null, type: fromRust.NodeType) : Node {

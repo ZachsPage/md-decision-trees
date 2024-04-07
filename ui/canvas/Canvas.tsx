@@ -6,18 +6,11 @@ import {NodeEditTextBox} from './NodeEditTextBox';
 import {Renderer, RenderBox} from "./Render"
 import * as fromRust from "../bindings/bindings"
 import {notNull} from "../Utils"
-import { NodeCreator } from "./key_handlers/NodeCreator"
+import {NodeCreator} from "./key_handlers/NodeCreator"
+import {NodeSelector, SelectedNode} from "./key_handlers/NodeSelector"
 import {observer} from 'mobx-react';
 import {reaction} from 'mobx';
 import React from 'react';
-
-// Passes information needed for selected node
-export class SelectedNode {
-  node: fromRust.Node | null = null
-  renderID: string = ""
-  box: RenderBox | null = null
-  beingEdited: boolean = false
-}
 
 // What is drawn on / shows nodes
 @observer
@@ -25,21 +18,17 @@ export class Canvas extends React.Component {
   nodeEditTextBoxRef: any;//typeof NodeEditTextBox | null = null;
   renderer: Renderer | null = null;
   nodeCreator: NodeCreator | null = null;
-  selectedNode: SelectedNode | null = null;
+  nodeSelector: NodeSelector | null = null;
 
   // Mouse / keyboard Events
-  onNodeClick(selectedNode: SelectedNode) {
-    this.setSelectedNode(selectedNode);
-  }
-
   onCanvasClick() {
-    this.setSelectedNode(null);
+    this.nodeSelector?.setSelectedNode(null);
     notNull(this?.nodeEditTextBoxRef?.current).setVisibility(false);
   }
 
   handleKeyboardShortcuts(event: any) {
     if (event.ctrlKey) {
-      if (event.key === 'e' && this.selectedNode) {
+      if (event.key === 'e' && this.nodeSelector?.current) {
         this.editSelectedNode();
       }
     }
@@ -51,12 +40,8 @@ export class Canvas extends React.Component {
   }
 
   // Helper Functions
-  setSelectedNode(newNode: SelectedNode | null) {
-    this.selectedNode = newNode;
-  }
-
   editSelectedNode(initialText?: string) {
-    let selection = notNull(this.selectedNode);
+    let selection = notNull(this.getSelectedNode());
     const textBox = this?.nodeEditTextBoxRef?.current;
     if (!textBox) { return; } //< TODO - this is null sometimes, so just return
     if (!selection.beingEdited) {
@@ -69,8 +54,8 @@ export class Canvas extends React.Component {
     }
   }
 
-  getSelectedNode() : SelectedNode | null {
-    return this.selectedNode;
+  getSelectedNode() : SelectedNode | null | undefined {
+    return this?.nodeSelector?.current();
   }
   
   // File functions
@@ -81,14 +66,11 @@ export class Canvas extends React.Component {
       })
       .then((nodes: fromRust.Nodes | void) => {
         if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
-        this.renderer = new Renderer( (node: SelectedNode) => {this.onNodeClick(node);});
-        this.renderer.renderNodes(nodes);
-        this.nodeCreator = new NodeCreator(this, this.renderer);
+        this?.renderer?.renderNodes(nodes);
       });
   }
 
   saveNodesToPath(filePath: string) {
-    console.log(`saveNodesToPath '${filePath}' - renderer is ${this.renderer}`);
     let nodesToSave: fromRust.Nodes = {title: Node.collectionTitle, nodes: notNull(this.renderer).getNodes()};
     fromRust.sendNodes(nodesToSave, filePath);
   }
@@ -108,10 +90,13 @@ export class Canvas extends React.Component {
   }
 
   componentDidMount() {
+    this.renderer = new Renderer( (node: SelectedNode) => {this?.nodeSelector?.setSelectedNode(node);});
+    this.nodeCreator = new NodeCreator(this, this.renderer);
+    this.nodeSelector = new NodeSelector(this.renderer);
+
     CanvasElement.parent = document.querySelector('.canvas') as HTMLElement;
     const defaultFile = "TEST_FILE:03_basic_encoding.md";
     canvasStore.setFilePath(defaultFile);
-    this.loadFile(defaultFile);
     this.bindMouseKeyEvents();
   }
 
