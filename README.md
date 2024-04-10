@@ -44,7 +44,7 @@ In the UI, each type will have its own color coding for clarity:
 ### Mapping Rules
 Decisions can have 1 to many Options - labeled `O1` / `O2` / etc  
 Options can have none or many Pros / Cons / child Decisions  
-Pros / Cons can also associate with one to many Options:  
+Pros / Cons can also associate with one to many Options (not implemented): 
 * The association can be opposite - ex. a Pro for `O1` is a con for `O2`
 * This will likely be tracked with tokens like `P1O1C1O2`  
 

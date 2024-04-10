@@ -6,8 +6,8 @@ import {NodeEditTextBox} from './NodeEditTextBox';
 import {Renderer, RenderBox} from "./Render"
 import * as fromRust from "../bindings/bindings"
 import {notNull} from "../Utils"
-import {NodeCreator} from "./key_handlers/NodeCreator"
-import {NodeSelector, SelectedNode} from "./key_handlers/NodeSelector"
+import {NodeCreator} from "./key-handlers/NodeCreator"
+import {NodeSelector, SelectedNode} from "./key-handlers/NodeSelector"
 import {observer} from 'mobx-react';
 import {reaction} from 'mobx';
 import React from 'react';
@@ -15,47 +15,63 @@ import React from 'react';
 // What is drawn on / shows nodes
 @observer
 export class Canvas extends React.Component {
-  nodeEditTextBoxRef: any;//typeof NodeEditTextBox | null = null;
+  nodeEditTextBoxRef: React.RefObject<typeof NodeEditTextBox>;
+  getNodeEditTextBox(): any { return notNull(this.nodeEditTextBoxRef?.current); }
   renderer: Renderer | null = null;
   nodeCreator: NodeCreator | null = null;
   nodeSelector: NodeSelector | null = null;
+  getSelectedNode() : SelectedNode | null | undefined { return this?.nodeSelector?.current(); }
 
   // Mouse / keyboard Events
-  onCanvasClick() {
+  clearSelection() {
     this.nodeSelector?.setSelectedNode(null);
-    notNull(this?.nodeEditTextBoxRef?.current).setVisibility(false);
+    notNull(this?.getNodeEditTextBox()).setVisibility(false);
   }
 
-  handleKeyboardShortcuts(event: any) {
+  delegateKeyEvent(event: KeyboardEvent) {
+    const escPressed = (event.key === "Escape");
+    const editKeyPressed : boolean = (event.ctrlKey && event.key === 'e');
+    if (this.handleNodeTextEdit(editKeyPressed, escPressed)) { return; } //< If editing, ensure text keys are not used
+    if (escPressed) { this.clearSelection(); }
+    if (this?.nodeCreator?.handleKeyEvent(event) || this?.nodeSelector?.handleKeyEvent(event)) { return; }
     if (event.ctrlKey) {
-      if (event.key === 'e' && this.nodeSelector?.current) {
-        this.editSelectedNode();
+      if (event.key === 'z') {
+        this.renderer?.doLayout(true);
+      } else if (event.key === 'd' && this.getSelectedNode()) {
+        this.renderer?.removeNode(notNull(this.getSelectedNode()).renderID);
       }
     }
   }
 
   bindMouseKeyEvents() {
-    CanvasElement.parent.addEventListener('mouseup', () => { this.onCanvasClick(); });
-    document.addEventListener('keydown', (event) => {this.handleKeyboardShortcuts(event)});
+    CanvasElement.parent.addEventListener('mouseup', () => { this.clearSelection(); });
+    document.addEventListener('keydown', (event) => {this.delegateKeyEvent(event)});
   }
 
   // Helper Functions
-  editSelectedNode(initialText?: string) {
-    let selection = notNull(this.getSelectedNode());
+  /// Returns true if node is being edited - so should not delegate handlers for pressed keys
+  handleNodeTextEdit(toggleEditState: boolean, cancel: boolean): boolean {
+    let userIsEditing: boolean = this?.getNodeEditTextBox().getVisibility();
+    if (cancel) { this.getNodeEditTextBox().setVisibility(false); return false; }
+    if (!toggleEditState) { return userIsEditing; }
+    if (!this?.getSelectedNode()) { return userIsEditing };
     const textBox = this?.nodeEditTextBoxRef?.current;
-    if (!textBox) { return; } //< TODO - this is null sometimes, so just return
-    if (!selection.beingEdited) {
-      selection.beingEdited = true;
-      textBox.setVisible(initialText !== undefined ? initialText : selection.node.text, selection.box);
-    } else {
-      selection.beingEdited = false;
-      this.renderer?.updateNodeData(selection.renderID, "text", textBox.getText())
-      textBox.setVisibility(false)
-    }
+    if (!textBox) { return userIsEditing; } //< TODO - this is null sometimes, so just return
+    if (!userIsEditing) { this.editSelectedNode(); } else { this.finishEditingSelectedNode(); }
+    return !userIsEditing; //< Flipped state since toggleEditState
   }
 
-  getSelectedNode() : SelectedNode | null | undefined {
-    return this?.nodeSelector?.current();
+  editSelectedNode(initialText?: string) {
+    const selection = notNull(this.getSelectedNode());
+    const newBoxText = (initialText !== undefined ? initialText : selection.node.text);
+    this.getNodeEditTextBox().setVisible(newBoxText, selection.box);
+  }
+
+  finishEditingSelectedNode() {
+    const selection = notNull(this.getSelectedNode());
+    const textBox = this.getNodeEditTextBox();
+    this.renderer?.updateNodeData(selection.renderID, "text", textBox.getText())
+    textBox.setVisibility(false)
   }
   
   // File functions

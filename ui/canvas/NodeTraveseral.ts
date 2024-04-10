@@ -4,12 +4,13 @@ import {notNull} from "../Utils"
 
 // Had to make this since couldn't figure out why the built-in dfs was going top / right / left
 export class DFS {
-  visitedNodes: fromRust.Node[] = []
+  //visitedNodes: fromRust.Node[] = []
+  visitedNodes: cytoscape.NodeSingular[] = []
   constructor(rootNodes: cytoscape.NodeCollection) {
     rootNodes.forEach((node: cytoscape.NodeSingular) => this.continueDFS(node));
   }
   continueDFS(currNode: cytoscape.NodeSingular) {
-    this.visitedNodes.push(currNode.data().nodeData.dataNode);
+    this.visitedNodes.push(currNode);
     currNode.outgoers().forEach((edge: cytoscape.EdgeSingular) => {
       edge.targets().forEach((child: cytoscape.NodeSingular) => {
         this.continueDFS(child)
@@ -20,17 +21,19 @@ export class DFS {
 
 // Keeps a window of nodes that allows switching the "currently selected node"  
 export class NodeTraverseSelection {
+  renderer?: Renderer;
   curr: cytoscape.NodeSingular;
   firstParent: cytoscape.NodeSingular | null = null
   rightSibs: cytoscape.NodeSingular[] = []
   leftSibs: cytoscape.NodeSingular[] = []
-  renderer?: Renderer;
 
   constructor(renderer: Renderer, startingNode: cytoscape.NodeSingular) {
     this.renderer = renderer;
     this.curr = startingNode;
     this.populateFrom(startingNode);
   }
+
+  clear() { this.curr.unselect(); }
 
   moveDown() {
     const firstChild = this.curr.outgoers()?.first()?.targets()?.first();
@@ -54,7 +57,7 @@ export class NodeTraverseSelection {
   // Populates member variables starting from startingNode to be used for switching which node is selected
   populateFrom(startingNode: cytoscape.NodeSingular | null) {
     if (!startingNode || startingNode.length == 0) { return; }
-    this.curr.unselect();
+    this.clear();
     this.curr = startingNode;
     this.firstParent = this.curr.incomers()?.first()?.source()?.first();
     // Get the siblings - handle if its a root or if it has actual siblings
