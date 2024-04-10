@@ -18,6 +18,7 @@ To see `console.logs` - RightClick -> Inspect Element - Console
 Run test & see prints - `(cd src-tauri/ && cargo test -- --nocapture)`
 
 ## Project Roadmap
+### MVP
 Here is a list of in order milestones to guide this project:
 * Create / run an example app & understand the structure / workflow - done
 * CtrlClick to draw rectangles (nodes) on the canvas  - done
@@ -37,16 +38,21 @@ Here is a list of in order milestones to guide this project:
 * Read a basic encoded file in Rust to get the D O P Cs - display type (see README.md) - done
 * Add color codes - Pro (green), Con (red), Decision (light orange) Option (light blue), Notes (light yellow) - done
 * Create / delete nodes - shortcut keys:
-  * ctrl+c to enter creation state, then either d o p c n - manage with new CreationHandler
-  * None selected - can create a D - add to graph and allow typing - write update to file in correct order
+  * ctrl+c to enter creation state, then either d o p c n - manage with new CreationHandler - done
+  * None selected - can create a D - add to graph and allow typing - write update to file in correct order - done
   * Node selected:
-    * D - can create D or O - send error if press something else
-    * O - can create D, P, C
-  * ctrl+d to delete - pop up for yes / no
-  * Create as parent instead - ctrl+c, ctrl+p, then d o n
-    * Or, maybe do ctrl+j to create down & ctrl+k to create up?
-* Move selection with h j k l - manage with new MovementHandler
+    * D - can create D or O - send error if press something else - done
+    * O - can create D, P, C - done
+  * ctrl+d to delete - done
+* Move selection with h j k l - manage with new MovementHandler - done
+* Allow creating new file & show current file title in tool / title bar
+* Update README to contain keyboard shortcuts
+
+### Additions
 * Side menu to show hot-key / color coding help
+* Pop-up to confirm deletion
+* Option to create nodes as parents instead - ctrl+c, ctrl+p, then d o n 
+  * Or, maybe do ctrl+j to create down & ctrl+k to create up?
 * Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
 * Make relationships collapsible
 * Make nodes collapsible (only show partial text)

@@ -1,7 +1,7 @@
 import {Node} from "./CanvasElems"
 import {getNodeColor} from "./Utils"
 import {notNull} from "../Utils"
-import {SelectedNode} from "./key_handlers/NodeSelector"
+import {SelectedNode} from "./key-handlers/NodeSelector"
 import {DFS, NodeTraverseSelection} from "./NodeTraveseral"
 import * as fromRust from "../bindings/bindings"
 import cytoscape from "cytoscape"
@@ -24,11 +24,13 @@ export class Renderer {
   // Public interaction functions
   updateNodeData(renderID: string, attribute: string, value: any) {
     // Edit the node text through the cy API to update the graph
-    this.cy.getElementById(renderID).data(`nodeData.dataNode.${attribute}`, value);
+    const nodeToEdit = this.cy.getElementById(renderID)
+    nodeToEdit.data(`nodeData.dataNode.${attribute}`, value);
     this.doLayout();
+    this.onNodeSelect(nodeToEdit); //< Cover case where text increases box size - update RenderBox
   }
 
-  focusOnNode(cyNode: cytoscape.NodeSingular, padding: number = 120) {
+  focusOnNode(cyNode: cytoscape.NodeSingular, padding: number = 250) {
     this.cy.fit(cyNode, padding);
   }
   
@@ -52,9 +54,15 @@ export class Renderer {
     return renderedNode;
   }
 
+  removeNode(renderID: string) {
+    const nodeToStartRemovals = this.cy.getElementById(renderID)
+    new DFS(nodeToStartRemovals).visitedNodes.forEach(node => this.cy.remove(node));
+    this.doLayout();
+  }
+
   getNodes(): fromRust.Node[] {
     // Get the nodes in DFS order since this will match the layout of the files
-    return new DFS(this.cy.nodes().roots()).visitedNodes;
+    return new DFS(this.cy.nodes().roots()).visitedNodes.map(x => x.data().nodeData.dataNode);
   }
 
   // Render functions
@@ -85,7 +93,7 @@ export class Renderer {
     let layoutArgs: any = {name: 'dagre'};
     if (!resetView) { layoutArgs = {...layoutArgs, fit: false, centerGraph: false}; }
     this.cy.elements().layout(layoutArgs).run();
-    if (resetView) { this.cy.fit(); this.cy.zoom(1); }
+    if (resetView) { this.cy.fit(); /*this.cy.zoom(1);*/ }
   }
 
   // Members
@@ -138,19 +146,7 @@ export class Renderer {
       node: cyNode.data().nodeData.dataNode,
       renderID: cyNode.data().id,
       box: nodeRenderOutline,
-      beingEdited: false,
     }
     notNull(this.nodeClickCB)(selectedNode);
-  }
-
-  // Helper functions
-  getNewNodesFileOrder(parent: fromRust.Node | undefined | null): number {
-    let nodeIDToFindMaxFrom = parent ? parent.file_order.toString() : this.cy.nodes().roots().last().data().id;
-    let maxFileOrderFromParent: number = 0;
-    this.cy.elements().dfs({root: `#${nodeIDToFindMaxFrom}`, visit: ((curr, edge, prev, idx, depth) => {
-      maxFileOrderFromParent = Math.max(maxFileOrderFromParent, curr.data().nodeData.dataNode.file_order);
-    })});
-    maxFileOrderFromParent = 12;
-    return maxFileOrderFromParent + 1;
   }
 };

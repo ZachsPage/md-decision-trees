@@ -7,6 +7,7 @@ import {notNull} from "../Utils"
 interface NodeEditTextBoxMethods {
   setVisible: (text: string, box: RenderBox) => void;
   setVisibility: (visible: boolean) => void;
+  getVisibility: () => boolean;
   getText: () => string;
 }
 
@@ -28,10 +29,11 @@ export const NodeEditTextBox = forwardRef<NodeEditTextBoxMethods>((_, ref) => {
     html.setSelectionRange(newText.length, newText.length);
   }
   const setVisibility = (visible: boolean) => { setVisibleState(visible); }
+  const getVisibility = (): boolean => { return visible; }
   const getText = (): string => { return text; }
 
   // Expose functions to parent
-  useImperativeHandle(ref, () => ({ setVisible, setVisibility, getText }));
+  useImperativeHandle(ref, () => ({ setVisible, setVisibility, getVisibility, getText }));
 
   return (
     <textarea id="NodeEditTextBox" ref={htmlRef}
