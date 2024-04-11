@@ -10,6 +10,8 @@ use lazy_static::lazy_static;
 // TODO - preserve from original file or make configurable
 pub const NUM_SPACES_PER_LEVEL: u32 = 2;
 
+pub const REQUIRED_HEADER: &str = "(md-decision-trees)";
+
 // For non-const statics
 lazy_static! {
   pub static ref DATA_DIR: PathBuf = PathBuf::from(format!("{top_dir}/test/data", top_dir=env!("CARGO_MANIFEST_DIR")));
@@ -20,7 +22,6 @@ pub fn parse_file(file_path: PathBuf) -> Result<Nodes, Box<dyn Error>> {
   let bound_str = read_to_string(file_path)?;
   let mut lines = bound_str.lines();
 
-  const REQUIRED_HEADER: &str = "(md-decision-trees)";
   let first_line = lines.next().ok_or("File did not contain a first header line")?;
   if !first_line.contains(REQUIRED_HEADER) { Err(format!("First line did not contain {}", REQUIRED_HEADER))?  }
 

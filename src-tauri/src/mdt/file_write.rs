@@ -1,7 +1,7 @@
 pub mod file_write {
 
 use super::structs::{Nodes, Node, to_node_start_string};
-use super::file_parse::NUM_SPACES_PER_LEVEL;
+use super::file_parse::{NUM_SPACES_PER_LEVEL, REQUIRED_HEADER};
 use std::path::PathBuf;
 use std::error::Error;
 use std::fs::File;
@@ -17,9 +17,16 @@ fn add_opt_node_type(prefix: &mut String, node: &Node) {
 }
   
 pub fn write_nodes_to_file(nodes: Nodes, file_path: PathBuf) -> Result<(), Box<dyn Error>> {
+  let decision_title = || -> String {
+    if !nodes.title.is_empty() { 
+      return nodes.title;
+    }
+    let file_stem = file_path.as_path().file_stem().unwrap().to_str().unwrap();
+    return String::from(format!("# {} {}", file_stem, REQUIRED_HEADER));
+  }();
   let file = File::create(file_path)?;
   let mut writer = BufWriter::new(file);
-  writer.write(nodes.title.as_bytes())?;
+  writer.write(decision_title.as_bytes())?;
 
   for node in nodes.nodes {
     writer.write(b"\n")?;

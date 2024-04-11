@@ -3,7 +3,7 @@ import {errorStore} from "../stores/ErrorStore"
 import {canvasStore} from "../stores/CanvasStore"
 import {CanvasElement, Node} from "./CanvasElems"
 import {NodeEditTextBox} from './NodeEditTextBox';
-import {Renderer, RenderBox} from "./Render"
+import {Renderer} from "./Render"
 import * as fromRust from "../bindings/bindings"
 import {notNull} from "../Utils"
 import {NodeCreator} from "./key-handlers/NodeCreator"
