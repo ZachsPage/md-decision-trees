@@ -94,6 +94,16 @@ export class Renderer {
     if (!resetView) { layoutArgs = {...layoutArgs, fit: false, centerGraph: false}; }
     this.cy.elements().layout(layoutArgs).run();
     if (resetView) { this.cy.fit(); /*this.cy.zoom(1);*/ }
+    // Tried messing with layoutArgs animate / animateDuration / animateFilter - also cy.stop(), but nothing other
+    //  that this helped with responsiveness. Oddly, this increases CPU (opposite of my goal), but does feel responsive.
+    this.throttleAnimation();
+  }
+
+  throttleAnimation() {
+    this.cy.delay(1000, () => {
+      this.cy.clearQueue();
+      this.throttleAnimation();
+    });
   }
 
   // Members
