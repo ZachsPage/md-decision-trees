@@ -5,9 +5,12 @@ import {notNull} from "../../Utils"
 
 // Passes information needed for selected node
 export class SelectedNode {
-  node: fromRust.Node | null = null
-  renderID: string = ""
-  box: RenderBox | null = null
+  node: fromRust.Node
+  renderID: string
+  box: RenderBox
+  constructor(node: fromRust.Node, renderID: string, box: RenderBox) {
+    this.node = node; this.renderID = renderID; this.box = box;
+  }
 }
 
 // Handles selecting nodes & traversing through them with keyboard shortcuts

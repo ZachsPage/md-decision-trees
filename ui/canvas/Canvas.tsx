@@ -1,7 +1,7 @@
 import "./Canvas.css";
 import {errorStore} from "../stores/ErrorStore"
 import {canvasStore} from "../stores/CanvasStore"
-import {CanvasElement, Node} from "./CanvasElems"
+import {Node} from "./CanvasElems"
 import {NodeEditTextBox} from './NodeEditTextBox';
 import {Renderer} from "./Render"
 import * as fromRust from "../bindings/bindings"
@@ -23,11 +23,7 @@ export class Canvas extends React.Component {
   getSelectedNode() : SelectedNode | null | undefined { return this?.nodeSelector?.current(); }
 
   // Mouse / keyboard Events
-  clearSelection() {
-    this.nodeSelector?.setSelectedNode(null);
-    notNull(this?.getNodeEditTextBox()).setVisibility(false);
-  }
-
+  // - Ensures state control using delegation as opposed to propagating state & allowing each component to register
   delegateKeyEvent(event: KeyboardEvent) {
     const escPressed = (event.key === "Escape");
     const editKeyPressed : boolean = (event.ctrlKey && event.key === 'e');
@@ -39,16 +35,18 @@ export class Canvas extends React.Component {
         this.renderer?.doLayout(true);
       } else if (event.key === 'd' && this.getSelectedNode()) {
         this.renderer?.removeNode(notNull(this.getSelectedNode()).renderID);
+      } else if (event.key === 's') {
+        this.saveNodesToPath(canvasStore.filePath);
       }
     }
   }
 
-  bindMouseKeyEvents() {
-    CanvasElement.parent.addEventListener('mouseup', () => { this.clearSelection(); });
-    document.addEventListener('keydown', (event) => {this.delegateKeyEvent(event)});
+  clearSelection() {
+    this.nodeSelector?.setSelectedNode(null);
+    notNull(this?.getNodeEditTextBox()).setVisibility(false);
   }
 
-  // Helper Functions
+  // Node text editing
   /// Returns true if node is being edited - so should not delegate handlers for pressed keys
   handleNodeTextEdit(toggleEditState: boolean, cancel: boolean): boolean {
     let userIsEditing: boolean = this?.getNodeEditTextBox().getVisibility();
@@ -75,18 +73,20 @@ export class Canvas extends React.Component {
   }
   
   // File functions
-  loadFile(fileToLoad: string) {
-    fromRust.getNodes(fileToLoad)
+  loadFile(filePath: string) {
+    if (filePath.length == 0) { return; } //< Ensure not change just to clear - allows re-trigger on same name
+    fromRust.getNodes(filePath)
       .catch((error) => {
-        errorStore.addError(`Error reading ${fileToLoad} - ${error}`);
+        errorStore.addError(`Error reading ${filePath} - ${error}`);
       })
       .then((nodes: fromRust.Nodes | void) => {
-        if (!nodes) { errorStore.addError(`No nodes in ${fileToLoad}?`); return; }
+        if (!nodes) { errorStore.addError(`No nodes in ${filePath}?`); return; }
         this?.renderer?.renderNodes(nodes);
       });
   }
 
   saveNodesToPath(filePath: string) {
+    if (filePath.length == 0) { return; } //< Ensure not change just to clear - allows re-trigger on same name
     let nodesToSave: fromRust.Nodes = {title: Node.collectionTitle, nodes: notNull(this.renderer).getNodes()};
     fromRust.sendNodes(nodesToSave, filePath);
   }
@@ -95,14 +95,12 @@ export class Canvas extends React.Component {
   constructor(props: any) {
     super(props);
     this.nodeEditTextBoxRef = React.createRef<typeof NodeEditTextBox>();
-    // Bind reactions to store value changes - check 0 length since producers clear the field first, then update the
-    //  value to still reload / save a file each time the button is clicked, even if the path wasn't changed
-    reaction(() => canvasStore.filePath, newFilePath => { 
-      if (newFilePath.length > 0) { this.loadFile(newFilePath); }
-    })
-    reaction(() => canvasStore.saveNodesToFilePath, filePath => { 
-      if (filePath.length > 0) { this.saveNodesToPath(filePath); }
-    })
+    // Bind reactions to store value changes
+    reaction(() => canvasStore.filePath, newFilePath => { this.loadFile(newFilePath); })
+    reaction(() => canvasStore.saveNodesToFilePath, filePath => { this.saveNodesToPath(filePath); })
+      // Bind interactions
+    document.addEventListener('mouseup', () => { this.clearSelection(); });
+    document.addEventListener('keydown', (event) => {this.delegateKeyEvent(event)});
   }
 
   componentDidMount() {
@@ -110,16 +108,15 @@ export class Canvas extends React.Component {
     this.nodeCreator = new NodeCreator(this, this.renderer);
     this.nodeSelector = new NodeSelector(this.renderer);
 
-    CanvasElement.parent = document.querySelector('.canvas') as HTMLElement;
     const defaultFile = "TEST_FILE:03_basic_encoding.md";
     canvasStore.setFilePath(defaultFile);
-    this.bindMouseKeyEvents();
   }
 
-  // Note: NodeEditTextBox must be out of "canvas" or the onChange does not fire correctly 
   render() {
+    {/*Note: NodeEditTextBox must be out of "canvas" or the onChange does not fire correctly*/}
     return <>
       <div className="canvas"/>
+      {/* @ts-ignore: ref is incompatible? */}
       <NodeEditTextBox ref={this.nodeEditTextBoxRef}/>
     </>
   }

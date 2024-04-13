@@ -50,6 +50,9 @@ devDependencies:
   '@tauri-apps/cli':
     specifier: ^1.5.0
     version: 1.5.0
+  '@types/cytoscape-dagre':
+    specifier: ^2.3.3
+    version: 2.3.3
   '@types/react':
     specifier: ^18.2.15
     version: 18.2.15
@@ -777,9 +780,14 @@ packages:
       '@tauri-apps/cli-win32-x64-msvc': 1.5.0
     dev: true
 
+  /@types/cytoscape-dagre@2.3.3:
+    resolution: {integrity: sha512-FJBsNMbBZpqNwT6rp5leVYMevWUjnyD1QS8erNMAMWoBifvaVUklXIjE+bllLDSowjM3abXuRvljliSXUU+d1A==}
+    dependencies:
+      '@types/cytoscape': 3.19.16
+    dev: true
+
   /@types/cytoscape@3.19.16:
     resolution: {integrity: sha512-A3zkjaZ6cOGyqEvrVuC1YUgiRSJhDZOj8Qhd1ALH2/+YxH2za1BOmR4RWQsKYHsc+aMP/IWoqg1COuUbZ39t/g==}
-    dev: false
 
   /@types/prop-types@15.7.9:
     resolution: {integrity: sha512-n1yyPsugYNSmHgxDFjicaI2+gCNjsBck8UX9kuofAKlc0h1bL+20oSF72KeNaW2DUlesbEVCFgyV2dPGTiY42g==}

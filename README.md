@@ -1,4 +1,9 @@
 # md-decision-trees
+## Demo
+Here is a demo visualizing a file, navigating, creating a new Con, saving the file, deleting a con & its note, then saving again:
+
+![demo](./doc/md_decision_tree_demo.gif)
+
 ## The Problem
 When making decisions, writing structured thoughts down is a go-to approach to avoid thinking in circles.  
 With each decision comes multiple options - each with their owns pros, cons - easy enough to map out:  
@@ -49,6 +54,31 @@ Pros / Cons can also associate with one to many Options (not implemented):
 * This will likely be tracked with tokens like `P1O1C1O2`  
 
 Notes can be associated with one to many of any entity  
+
+Errors will pop up if a creation is invalid!
+
+## How To Use
+`pnpm tauri dev` to start the app
+
+To install for linux:
+* `pnpm tauri build`
+* `sudo apt-get install src-tauri/target/release/bundle/deb/md-decision-trees_0.0.0_amd64.deb`
+
+### Mouse 
+Click and drag - move the canvas around
+Scroll - change the zoom level
+
+### Keyboard Use / Shortcuts
+`h j k l` - Vim movement to walk through the tree:
+* h / l - left and right siblings & j / k - parents & children  
+`esc` - Various exits - ex. to close the "Error Console" if it appears, clear selection, etc
+`ctrl+c <node type, like d o p c n>` - Create nodes of a certain type:
+* ex. `ctrl+c d` to create a decision, `ctrl+o` for an Option  
+`ctrl+e` - Edit the selected node's text **then** press `ctrl+e` again to save the edit:
+* Can press `esc` or click elsewhere to cancel the text changes  
+`ctrl+d` - Delete selected node & its children
+`ctrl+z` - Zoom to fit the as much tree as possible
+`ctrl+s` - Save the current file
 
 ## Folder Layout / Links
 `doc`

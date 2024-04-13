@@ -1,10 +1,8 @@
-import * as fromRust from "../bindings/bindings"
 import {Renderer} from "./Render"
 import {notNull} from "../Utils"
 
 // Had to make this since couldn't figure out why the built-in dfs was going top / right / left
 export class DFS {
-  //visitedNodes: fromRust.Node[] = []
   visitedNodes: cytoscape.NodeSingular[] = []
   constructor(rootNodes: cytoscape.NodeCollection) {
     rootNodes.forEach((node: cytoscape.NodeSingular) => this.continueDFS(node));
@@ -36,6 +34,7 @@ export class NodeTraverseSelection {
   clear() { this.curr.unselect(); }
 
   moveDown() {
+    // @ts-ignore: targets doesn't exist?
     const firstChild = this.curr.outgoers()?.first()?.targets()?.first();
     this.populateFrom(firstChild);
   }
@@ -59,6 +58,7 @@ export class NodeTraverseSelection {
     if (!startingNode || startingNode.length == 0) { return; }
     this.clear();
     this.curr = startingNode;
+    // @ts-ignore: source doesn't exist?
     this.firstParent = this.curr.incomers()?.first()?.source()?.first();
     // Get the siblings - handle if its a root or if it has actual siblings
     let sibs = !this.firstParent ? notNull(this.renderer).cy.nodes().roots() : [];

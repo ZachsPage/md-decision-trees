@@ -1,19 +1,22 @@
 import "./Toolbars.css";
-import {CanvasStore} from "../stores/CanvasStore"
+import {canvasStore, CanvasStore} from "../stores/CanvasStore"
 import {errorStore} from "../stores/ErrorStore"
 import * as fromRust from "../bindings/bindings"
 import {open, save} from "@tauri-apps/api/dialog"
+import {observer} from 'mobx-react';
 
-export const TopToolbar : React.FC = () => {
+export const TopToolbar : React.FC = observer(() => {
+    const getFileName = (filePath: String): String | undefined => {
+      return filePath.split('\\').pop()?.split('/').pop();
+    }
+    // TODO - <button>File</button / View / Tools / Help
     return (
         <div id="top-toolbar">
-          <button>File</button>
           <button>View</button>
-          <button>Tools</button>
-          <button>Help</button>
+          <div id="file-name">File Name: {getFileName(canvasStore.filePath)}</div>
         </div>
     );
-};
+});
 
 interface LeftToolbarProps {
     canvasStore: CanvasStore
@@ -26,7 +29,7 @@ export const LeftToolbar : React.FC<LeftToolbarProps> = ({canvasStore}) => {
         title: "Open MD Decision File", filters: [{name: "mds", extensions: ['md']}], multiple: false});
       if (filePath) {
         canvasStore.setFilePath(""); //< clear first to ensure update
-        canvasStore.setFilePath(filePath);
+        canvasStore.setFilePath(Array.isArray(filePath) ? filePath[0] : filePath);
       }
     } catch(err) {
       errorStore.addError(`Error opening file - ${err}`);

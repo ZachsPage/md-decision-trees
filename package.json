@@ -26,6 +26,7 @@
     "@babel/plugin-proposal-decorators": "^7.24.1",
     "@babel/plugin-transform-class-properties": "^7.24.1",
     "@tauri-apps/cli": "^1.5.0",
+    "@types/cytoscape-dagre": "^2.3.3",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",

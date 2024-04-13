@@ -46,7 +46,6 @@ impl BulletFileParser {
       }
     } else {
       // TODO - implement multi-line bullets
-
     }
     return Ok(None);
   }
