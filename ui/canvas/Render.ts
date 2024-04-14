@@ -39,17 +39,17 @@ export class Renderer {
     return new NodeTraverseSelection(this, cyNodeStart);
   }
 
-  createNode(parent: fromRust.Node | undefined | null, type: fromRust.NodeType) : Node {
+  createNode(type: fromRust.NodeType, parent: SelectedNode | undefined | null) : Node {
     let newNode: fromRust.Node = {
       // If text this is unset, cannot see node due to width & height based on label
       // - Is cleared once created, but the size is maintained
       text: "Text for init size",
       file_order: 0, //< Doesnt matter - will be populated correctly in getNodes
-      level: parent ? parent.level + 1 : 0,
-      parent_idxs: parent ? [parent.file_order] : [],
+      level: parent ? parent.node.level + 1 : 0,
+      parent_idxs: [], //< Doesnt matter - not used when sending nodes back - using parentID instead for renderNode
       type_is: type
     };
-    let renderedNode = this.renderNode(newNode, newNode.parent_idxs.map(x => x.toString()));
+    let renderedNode = this.renderNode(newNode, parent ? [parent.renderID] : []);
     this.doLayout();
     return renderedNode;
   }
@@ -69,6 +69,7 @@ export class Renderer {
   renderNodes(nodes : fromRust.Nodes) {
     this.cy.remove(this.cy.nodes());
     this.cy.remove(this.cy.edges());
+    this.nextNodeID = 0; //< Reset to align with parentIDs
     Node.newCollection(nodes.title);
     nodes.nodes.forEach((node: fromRust.Node) => { 
       let parentIDs = node.parent_idxs.map(id => id.toString());
@@ -118,9 +119,11 @@ export class Renderer {
   });
   nodeClickCB: OnNodeClickCB | null = null;
   nextNodeID: number = 0;
+  currLayout: any = null;
 
   // Init
   constructor(nodeClickCB : OnNodeClickCB) {
+    console.log("new renderer");
     // Inits
     this.nodeClickCB = nodeClickCB;
     // Binds
@@ -132,7 +135,7 @@ export class Renderer {
           shape: 'rectangle', width: 'label', height: 'label',
           'text-valign': "center", 'text-halign': "center", 'text-wrap': "wrap", 'text-max-width': '200',
           "border-width": 12, 'border-color': "black", 'text-background-opacity': 1, 'text-background-padding': "5", 
-          'text-background-color': (cyNode: cytoscape.NodeSingular): String => {
+          'text-background-color': (cyNode: cytoscape.NodeSingular): string => {
              return getNodeColor(cyNode.data().nodeData.dataNode.type_is);
           },
         })
@@ -152,11 +155,7 @@ export class Renderer {
       y: canvasBox.y + nodeBox.y1 - renderOffset, height: nodeBox.y2 - nodeBox.y1,
       color: cyNode.style("text-background-color")
     };
-    const selectedNode: SelectedNode = {
-      node: cyNode.data().nodeData.dataNode,
-      renderID: cyNode.data().id,
-      box: nodeRenderOutline,
-    }
+    const selectedNode = new SelectedNode(cyNode.data().nodeData.dataNode, cyNode.data().id, nodeRenderOutline);
     notNull(this.nodeClickCB)(selectedNode);
   }
 };

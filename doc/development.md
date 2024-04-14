@@ -9,13 +9,13 @@
 Managing modules:
 * `cargo add / remove <name>`
 
+Run test & see prints - `(cd src-tauri/ && cargo test -- --nocapture)`
+
 #### pnpm / Typescript
 `pnpm tauri dev` - runs the app
+* To see `console.logs` - RightClick -> Inspect Element - Console
 `pnpm tauri build` - bundling
-To see `console.logs` - RightClick -> Inspect Element - Console
 `pnpm add / remove <package>`
-
-Run test & see prints - `(cd src-tauri/ && cargo test -- --nocapture)`
 
 ## Project Roadmap
 ### MVP
@@ -45,31 +45,25 @@ Here is a list of in order milestones to guide this project:
     * O - can create D, P, C - done
   * ctrl+d to delete - done
 * Move selection with h j k l - manage with new MovementHandler - done
-* Allow creating new file & show current file title in tool / title bar
-* Update README to contain keyboard shortcuts
+* Allow creating new file & show current file title in tool / title bar - done
+* Update README to contain keyboard shortcuts - done
 
 ### Additions
+* Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
+* Support multi-line entries
+* Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
 * Side menu to show hot-key / color coding help
 * Pop-up to confirm deletion
 * Option to create nodes as parents instead - ctrl+c, ctrl+p, then d o n 
   * Or, maybe do ctrl+j to create down & ctrl+k to create up?
 * Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
-* Make relationships collapsible
-* Make nodes collapsible (only show partial text)
-* Filter what is being viewed - Ds, Os, Ps, Cs, Ns - change through view modal
-* Create color scheme to make UI look better
-* Figure out bundling
-* Replace quick file opener with a file explorer in the left toolbar
-* Sidebar that can navigate the file system:
-  * Take in a program argument to choose the root directory
-  * Only show `*.md` files
+* Make node text node collapsible (only show partial text)
+* Bundling
+* Replace quick file opener with a file explorer in the left toolbar (program arg for root dir, only show `*.md` files)
+* Create nodes that can link to other files
 
 ### Dev Experience
 * Add unit TS unit using `jest`
 * Figure out running tests in CI - start with Rust tests
 * Figure out UI testing / integration testing?
 * Add markdown / rust / ts linters?
-
-### Reaching
-* Create nodes that can link to other files
-

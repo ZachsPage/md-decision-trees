@@ -38,14 +38,15 @@ export class NodeCreator {
 
   createNodeOnSelected(type: String | null ) {
     if (!type) { return; }
-    let optParentNode = this?.canvas?.getSelectedNode()?.node;
-    if (!this.canCreateTypeOnParent(optParentNode?.type_is, type)) { 
-      const parentTypeStr = optParentNode?.type_is ? optParentNode?.type_is : "none";
+    let optParentNode = this?.canvas?.getSelectedNode();
+    let optParentNodeType = optParentNode?.node.type_is;
+    if (!this.canCreateTypeOnParent(optParentNodeType, type)) { 
+      const parentTypeStr = optParentNodeType ? optParentNodeType : "none";
       errorStore.addError(`Cannot create node type '${type}' on parent node type '${parentTypeStr}'`);
       return;
     }
     let renderer = notNull(this.render);
-    let newNode = notNull(renderer.createNode(optParentNode, type as fromRust.NodeType));
+    let newNode = notNull(renderer.createNode(type as fromRust.NodeType, optParentNode));
     renderer.focusOnNode(newNode.cyNode);
     renderer.onNodeSelect(newNode.cyNode);
     this.canvas?.editSelectedNode("");

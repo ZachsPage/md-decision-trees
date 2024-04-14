@@ -1,6 +1,6 @@
 
 // Gets color based on node type
-export function getNodeColor(nodeType: String): String {
+export function getNodeColor(nodeType: string): string {
   switch (nodeType) { // Use html color codes to get lighter colors - coolors.com
     case "Decision": return "#FFAF37" // orange
     case "Option": return "#36A9E2"; // blue

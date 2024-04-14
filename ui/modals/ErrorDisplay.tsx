@@ -21,6 +21,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = observer(({errorStore})
 
     return (
         <div>
+            {/* @ts-ignore: ReactModal is missing 'children'?*/}
             <ReactModal className={"error-display-modal"}
                     initWidth={400} initHeight={200} 
                     isOpen={checkIsOpen()} onRequestClose={() => {setModalIsOpen(false)}}>
