@@ -4,6 +4,9 @@ Here is a demo visualizing a file, navigating, creating a new Con, saving the fi
 
 ![demo](./doc/md_decision_tree_demo.gif)
 
+## Warning
+Mainly a C++ developer :sweat_smile:
+
 ## The Problem
 When making decisions, writing structured thoughts down is a go-to approach to avoid thinking in circles.  
 With each decision comes multiple options - each with their owns pros, cons - easy enough to map out:  
@@ -70,12 +73,15 @@ Scroll - change the zoom level
 
 ### Keyboard Use / Shortcuts
 `h j k l` - Vim movement to walk through the tree:
-* h / l - left and right siblings & j / k - parents & children  
+* h / l - left and right siblings & j / k - parents & children
+
 `esc` - Various exits - ex. to close the "Error Console" if it appears, clear selection, etc
 `ctrl+c <node type, like d o p c n>` - Create nodes of a certain type:
-* ex. `ctrl+c d` to create a decision, `ctrl+o` for an Option  
+* ex. `ctrl+c d` to create a decision, `ctrl+o` for an Option
+
 `ctrl+e` - Edit the selected node's text **then** press `ctrl+e` again to save the edit:
-* Can press `esc` or click elsewhere to cancel the text changes  
+* Can press `esc` or click elsewhere to cancel the text changes
+
 `ctrl+d` - Delete selected node & its children
 `ctrl+z` - Zoom to fit the as much tree as possible
 `ctrl+s` - Save the current file
