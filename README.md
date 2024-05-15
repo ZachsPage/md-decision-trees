@@ -76,8 +76,8 @@ Scroll - change the zoom level
 * h / l - left and right siblings & j / k - parents & children
 
 `esc` - Various exits - ex. to close the "Error Console" if it appears, clear selection, etc
-`ctrl+c <node type, like d o p c n>` - Create nodes of a certain type:
-* ex. `ctrl+c d` to create a decision, `ctrl+o` for an Option
+`ctrl+m <node type, like d o p c n>` - Make nodes of a certain type:
+* ex. `ctrl+m d` to create a Decision, `ctrl+m o` for an Option
 
 `ctrl+e` - Edit the selected node's text **then** press `ctrl+e` again to save the edit:
 * Can press `esc` or click elsewhere to cancel the text changes
