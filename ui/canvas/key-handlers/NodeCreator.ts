@@ -6,7 +6,7 @@ import * as fromRust from "../../bindings/bindings"
 
 enum State {
   None,
-  ReadyToCreate
+  ReadyToMake
 }
 
 // Handles creating nodes
@@ -23,26 +23,26 @@ export class NodeCreator {
   /// Return true if event has handled
   handleKeyEvent(event: KeyboardEvent): boolean {
     if (event.ctrlKey) {
-      if (event.key === 'c') {
-        this.state = State.ReadyToCreate;
+      if (event.key === 'm') {
+        this.state = State.ReadyToMake;
         return true;
       }
-    } else if (this.state == State.ReadyToCreate) {
+    } else if (this.state == State.ReadyToMake) {
       this.state = State.None;
-      this.createNodeOnSelected(this.getNodeTypeStringFromPressedKey(event.key));
+      this.makeNodeOnSelected(this.getNodeTypeStringFromPressedKey(event.key));
       event.preventDefault(); //< Stops key from entering node text on creation & changing node size
       return true;
     }
     return false;
   }
 
-  createNodeOnSelected(type: String | null ) {
+  makeNodeOnSelected(type: String | null ) {
     if (!type) { return; }
     let optParentNode = this?.canvas?.getSelectedNode();
     let optParentNodeType = optParentNode?.node.type_is;
-    if (!this.canCreateTypeOnParent(optParentNodeType, type)) { 
+    if (!this.canMakeTypeOnParent(optParentNodeType, type)) { 
       const parentTypeStr = optParentNodeType ? optParentNodeType : "none";
-      errorStore.addError(`Cannot create node type '${type}' on parent node type '${parentTypeStr}'`);
+      errorStore.addError(`Cannot make node type '${type}' on parent node type '${parentTypeStr}'`);
       return;
     }
     let renderer = notNull(this.render);
@@ -62,7 +62,7 @@ export class NodeCreator {
     return null;
   }
 
-  canCreateTypeOnParent(parentType: String | undefined | null, newType: String): Boolean {
+  canMakeTypeOnParent(parentType: String | undefined | null, newType: String): Boolean {
     if (newType == "Note") { return true; }
     if (!parentType) { return newType == "Decision"; }
     if (parentType == "Decision") { return newType == "Option"; }

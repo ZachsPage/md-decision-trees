@@ -95,16 +95,6 @@ export class Renderer {
     if (!resetView) { layoutArgs = {...layoutArgs, fit: false, centerGraph: false}; }
     this.cy.elements().layout(layoutArgs).run();
     if (resetView) { this.cy.fit(); /*this.cy.zoom(1);*/ }
-    // Tried messing with layoutArgs animate / animateDuration / animateFilter - also cy.stop(), but nothing other
-    //  that this helped with responsiveness. Oddly, this increases CPU (opposite of my goal), but does feel responsive.
-    this.throttleAnimation();
-  }
-
-  throttleAnimation() {
-    this.cy.delay(1000, () => {
-      this.cy.clearQueue();
-      this.throttleAnimation();
-    });
   }
 
   // Members
@@ -123,9 +113,9 @@ export class Renderer {
 
   // Init
   constructor(nodeClickCB : OnNodeClickCB) {
-    console.log("new renderer");
     // Inits
     this.nodeClickCB = nodeClickCB;
+    this.throttleWindowRAF(); //< On my VM, idles around 5% CPU with rendered graph - without this, its more like 40%
     // Binds
     this.cy.on('click', 'node', (evt: any) => { this.onNodeSelect(evt.target); });
     // Set node CSS
@@ -157,5 +147,22 @@ export class Renderer {
     };
     const selectedNode = new SelectedNode(cyNode.data().nodeData.dataNode, cyNode.data().id, nodeRenderOutline);
     notNull(this.nodeClickCB)(selectedNode);
+  }
+
+  // Hacky, but saves CPU by throttling window's requestAnimationFrame - kicks cytoscape's repaint too much, even without updates
+  actualRAF: any = window.requestAnimationFrame;
+  prevFrameReqMS: number = Date.now();
+  throttleWindowRAF() {
+    window.requestAnimationFrame = (callback: FrameRequestCallback) => { return this.throttledRAF(callback); };
+  }
+  throttledRAF(callback: FrameRequestCallback) { 
+    const throttleMS = 50;
+    if (Date.now() > this.prevFrameReqMS + throttleMS) {
+      this.prevFrameReqMS = Date.now();
+      window.requestAnimationFrame = this.actualRAF;
+      window.requestAnimationFrame(() => { this.throttleWindowRAF(); });
+    } 
+    callback(0);
+    return 0;
   }
 };
