@@ -61,7 +61,20 @@ Notes can be associated with one to many of any entity
 Errors will pop up if a creation is invalid!
 
 ## How To Use
+
+### Packages to install
+
+Install `pnpm`
+* Likely using `npm` first - follow [this](https://pnpm.io/installation)
+
+Run `pnpm install tauri`:
+* If package installation fails, it is likely missing packages required for Tauri (see [Prerequisites](https://v1.tauri.app/v1/guides/getting-started/prerequisites))
+
+### Running
+
 `pnpm tauri dev` to start the app
+
+### Bundle / Install the App For Linux
 
 To install for linux:
 * `pnpm tauri build`
