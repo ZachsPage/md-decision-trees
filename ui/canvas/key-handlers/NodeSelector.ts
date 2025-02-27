@@ -1,6 +1,6 @@
 import * as fromRust from "../../bindings/bindings"
-import {RenderBox, Renderer} from "../Render"
-import {NodeTraverseSelection} from "../NodeTraveseral"
+import {RenderBox, Renderer} from "../Render2"
+import {NodeTraverseSelection} from "../NodeTraveseral2"
 import {notNull} from "../../Utils"
 
 // Passes information needed for selected node
@@ -41,9 +41,10 @@ export class NodeSelector {
     if (event.key != 'j' && event.key != 'k' && event.key != 'h' && event.key != 'l') { return false; }
     if (!this.nodeTraverser) {
       this.nodeTraverser = notNull(this.renderer?.newNodeTraverseSelection(this.selectedNode));
-      if (!this.selectedNode) { return true; } /* Start at first node instead of going that direction immediately */
     }
-    if (event.key === 'j') {
+    if (!this.selectedNode) {
+      /* Start at first node instead of going that direction immediately */
+    } else if (event.key === 'j') {
       this.nodeTraverser?.moveDown();
     } else if (event.key === 'k') {
       this.nodeTraverser?.moveUp();
@@ -52,9 +53,9 @@ export class NodeSelector {
     } else if (event.key === 'l') {
       this.nodeTraverser?.moveRight();
     }
-    const maybeNewNode = this?.nodeTraverser?.curr;
-    if (maybeNewNode?.id() != this.selectedNode?.renderID) {
-      this?.renderer?.onNodeSelect(notNull(maybeNewNode));
+    const maybeNewNodeId = this?.nodeTraverser?.node()?.id;
+    if (maybeNewNodeId != this.selectedNode?.renderID) {
+      this?.renderer?.onNodeSelect(maybeNewNodeId);
     }
     return true;
   }

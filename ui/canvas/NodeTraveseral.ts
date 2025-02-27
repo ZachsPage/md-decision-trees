@@ -1,4 +1,4 @@
-import {Renderer} from "./Render"
+import {Renderer} from "./Render2"
 import {notNull} from "../Utils"
 
 // Had to make this since couldn't figure out why the built-in dfs was going top / right / left

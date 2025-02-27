@@ -1,5 +1,5 @@
 import { Canvas } from "../Canvas";
-import { Renderer } from "../Render";
+import { Renderer } from "../Render2";
 import { notNull } from "../../Utils"
 import { errorStore } from "../../stores/ErrorStore"
 import * as fromRust from "../../bindings/bindings"

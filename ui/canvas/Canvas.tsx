@@ -3,7 +3,7 @@ import {errorStore} from "../stores/ErrorStore"
 import {canvasStore} from "../stores/CanvasStore"
 import {Node} from "./CanvasElems"
 import {NodeEditTextBox} from './NodeEditTextBox';
-import {Renderer} from "./Render"
+import {Renderer, RendererComp} from "./Render2"
 import * as fromRust from "../bindings/bindings"
 import {notNull} from "../Utils"
 import {NodeCreator} from "./key-handlers/NodeCreator"
@@ -17,9 +17,9 @@ import React from 'react';
 export class Canvas extends React.Component {
   nodeEditTextBoxRef: React.RefObject<typeof NodeEditTextBox>;
   getNodeEditTextBox(): any { return notNull(this.nodeEditTextBoxRef?.current); }
-  renderer: Renderer | null = null;
-  nodeCreator: NodeCreator | null = null;
-  nodeSelector: NodeSelector | null = null;
+  renderer: Renderer = new Renderer( (node: SelectedNode) => {this?.nodeSelector?.setSelectedNode(node);});
+  nodeCreator: NodeCreator = new NodeCreator(this, this.renderer);
+  nodeSelector: NodeSelector = new NodeSelector(this.renderer);
   getSelectedNode() : SelectedNode | null | undefined { return this?.nodeSelector?.current(); }
 
   // Mouse / keyboard Events
@@ -104,10 +104,6 @@ export class Canvas extends React.Component {
   }
 
   componentDidMount() {
-    this.renderer = new Renderer( (node: SelectedNode) => {this?.nodeSelector?.setSelectedNode(node);});
-    this.nodeCreator = new NodeCreator(this, this.renderer);
-    this.nodeSelector = new NodeSelector(this.renderer);
-
     const defaultFile = "TEST_FILE:03_basic_encoding.md";
     canvasStore.setFilePath(defaultFile);
   }
@@ -115,9 +111,10 @@ export class Canvas extends React.Component {
   render() {
     {/*Note: NodeEditTextBox must be out of "canvas" or the onChange does not fire correctly*/}
     return <>
-      <div className="canvas"/>
+      <div className="canvas2"/>
       {/* @ts-ignore: ref is incompatible? */}
       <NodeEditTextBox ref={this.nodeEditTextBoxRef}/>
+      <RendererComp renderer={this.renderer}/>
     </>
   }
 }
