@@ -1,7 +1,7 @@
 import {Node} from "./CanvasElems"
 import {notNull} from "../Utils"
 import {getNodeColor} from "./Utils"
-import { useCallback } from 'react';
+import {useCallback, useState, useMemo, useRef} from 'react';
 import dagre from 'dagre';
 import ReactFlow, { 
   Node as FlowNode,
@@ -12,6 +12,11 @@ import ReactFlow, {
   NodeChange,
   Background,
   Controls,
+  NodeProps,
+  Handle,
+  Position,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -107,6 +112,7 @@ export class Renderer {
       rank: this._getRank(newNode.type_is),
       style: this._getNodesStyle(newNode.type_is),
       position: { x: 0, y: 0 },
+      type: 'customNodeComp',
     }
     this.nodes.push(newCanvasNode);
     ++this.nextNodeID;
@@ -165,6 +171,7 @@ export class Renderer {
   nodes: FlowNode[] = [];
   edges: FlowEdge[] = [];
   renderGraph: any = null;
+  doubleClickNode: any = null;
 
   // Init
   constructor(nodeClickCB : OnNodeClickCB) {
@@ -179,11 +186,12 @@ export class Renderer {
     this.graph.setGraph({
       rankdir: "TB", 
       ranksep: 100,
-      nodesep: 150
+      nodesep: 200,
     });
   }
 
   setRenderGraphFcn(renderGraph: any) { this.renderGraph = renderGraph; }
+  setDoubleClickNodeFcn(doubleClickNode: any) { this.doubleClickNode = doubleClickNode; }
   _rerenderNodes() {
     if (this.renderGraph) {
       this.renderGraph(this.nodes, this.edges);
@@ -207,12 +215,59 @@ export class Renderer {
     }
     this._rerenderNodes();
   }
+
+  nodeBeingEdited: Element | null = null;
+
+  isEditingNode() { return this.nodeBeingEdited !== null; }
+
+  onNodeEdit(nodeID: any) {
+    const nodeToEdit = document.getElementById(`custom-node-${nodeID}`)
+    if (!nodeToEdit) {
+      console.log("Cannot find node to edit ", nodeID)
+    } else {
+      this.nodeBeingEdited = nodeToEdit;
+      this.nodeBeingEdited.dispatchEvent(new MouseEvent("dblclick", {bubbles: true, cancelable: true}));
+    }
+  }
+
+  onNodeEditFinish() {
+    this.nodeBeingEdited?.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true, cancelable: true}));
+    this.nodeBeingEdited = null;
+  }
 };
+
+function CustomNodeComp({ data, id }: NodeProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [text, setText] = useState(data.label);
+  const handleDoubleClick = useCallback(() => { setIsEditing(true); }, []);
+  const handleKeyDown = useCallback((evt: React.KeyboardEvent) => {
+    if (evt.key === 'Enter' || evt.key === 'Escape') {
+      setIsEditing(false);
+      data.onChange(id, text);
+    }
+  }, [id, text, data]);
+  const nodeElementId = `custom-node-${id}`;
+ 
+  return (
+    <div id={nodeElementId} onDoubleClick={handleDoubleClick} onKeyDown={handleKeyDown}>
+      <Handle type="target" position={Position.Top} />
+      {!isEditing
+      ? <div className="node-content">{text}</div> 
+      : <input
+          type="text"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          autoFocus
+        />}
+      <Handle type="source" position={Position.Bottom} />
+    </div>
+  );
+}
 
 export const RendererComp = (({renderer}: {renderer: Renderer}) => {
     const [nodes, setNodes] = useNodesState([])
     const [edges, setEdges] = useEdgesState([]);
-    renderer.setRenderGraphFcn((tmpNodes: any, tmpEdges: any) => { setNodes(tmpNodes); setEdges(tmpEdges); });
+    const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
 
     // Update initialNodes to include the text change handler
     const handleNodeTextChange = useCallback((nodeId: string, newText: string) => {
@@ -223,13 +278,17 @@ export const RendererComp = (({renderer}: {renderer: Renderer}) => {
     const nodesWithHandlers = nodes?.map(node => ({...node, data: { ...node.data, onChange: handleNodeTextChange}}));
 
     const onNodesChange = useCallback((changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds));
+      setNodes((changedNodes) => applyNodeChanges(changes, changedNodes));
     }, [setNodes]);
 
+    renderer.setRenderGraphFcn((tmpNodes: any, tmpEdges: any) => { setNodes(tmpNodes); setEdges(tmpEdges); });
+
     return (
-      <ReactFlow id="reactflow-canvas" fitView defaultEdgeOptions={{type: 'smoothstep', animated: true}}
+      <ReactFlow fitView defaultEdgeOptions={{type: 'smoothstep', animated: true}}
         nodes={nodesWithHandlers} edges={edges}
         onNodesChange={onNodesChange}
+        nodeTypes={nodeTypes} 
+        zoomOnDoubleClick={false}
       >
         <Background />
         <Controls />

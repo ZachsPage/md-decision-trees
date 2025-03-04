@@ -15,8 +15,8 @@ import React from 'react';
 // What is drawn on / shows nodes
 @observer
 export class Canvas extends React.Component {
-  nodeEditTextBoxRef: React.RefObject<typeof NodeEditTextBox>;
-  getNodeEditTextBox(): any { return notNull(this.nodeEditTextBoxRef?.current); }
+  //nodeEditTextBoxRef: React.RefObject<typeof NodeEditTextBox>;
+  //getNodeEditTextBox(): any { return notNull(this.nodeEditTextBoxRef?.current); }
   renderer: Renderer = new Renderer( (node: SelectedNode) => {this?.nodeSelector?.setSelectedNode(node);});
   nodeCreator: NodeCreator = new NodeCreator(this, this.renderer);
   nodeSelector: NodeSelector = new NodeSelector(this.renderer);
@@ -43,33 +43,21 @@ export class Canvas extends React.Component {
 
   clearSelection() {
     this.nodeSelector?.setSelectedNode(null);
-    notNull(this?.getNodeEditTextBox()).setVisibility(false);
   }
 
   // Node text editing
   /// Returns true if node is being edited - so should not delegate handlers for pressed keys
   handleNodeTextEdit(toggleEditState: boolean, cancel: boolean): boolean {
-    let userIsEditing: boolean = this?.getNodeEditTextBox().getVisibility();
-    if (cancel) { this.getNodeEditTextBox().setVisibility(false); return false; }
+    let userIsEditing: boolean = this?.renderer?.isEditingNode() ?? false;
+    if (cancel) { this?.renderer?.onNodeEditFinish(); return false; }
     if (!toggleEditState) { return userIsEditing; }
     if (!this?.getSelectedNode()) { return userIsEditing };
-    const textBox = this?.nodeEditTextBoxRef?.current;
-    if (!textBox) { return userIsEditing; } //< TODO - this is null sometimes, so just return
-    if (!userIsEditing) { this.editSelectedNode(); } else { this.finishEditingSelectedNode(); }
+    if (!userIsEditing) { this.editSelectedNode(); } else { this.renderer?.onNodeEditFinish(); }
     return !userIsEditing; //< Flipped state since toggleEditState
   }
 
   editSelectedNode(initialText?: string) {
-    const selection = notNull(this.getSelectedNode());
-    const newBoxText = (initialText !== undefined ? initialText : selection.node.text);
-    this.getNodeEditTextBox().setVisible(newBoxText, selection.box);
-  }
-
-  finishEditingSelectedNode() {
-    const selection = notNull(this.getSelectedNode());
-    const textBox = this.getNodeEditTextBox();
-    this.renderer?.updateNodeData(selection.renderID, "text", textBox.getText())
-    textBox.setVisibility(false)
+    this.renderer?.onNodeEdit(notNull(this.getSelectedNode()));
   }
   
   // File functions
@@ -94,11 +82,11 @@ export class Canvas extends React.Component {
   // State Change Updates
   constructor(props: any) {
     super(props);
-    this.nodeEditTextBoxRef = React.createRef<typeof NodeEditTextBox>();
+    //this.nodeEditTextBoxRef = React.createRef<typeof NodeEditTextBox>();
     // Bind reactions to store value changes
     reaction(() => canvasStore.filePath, newFilePath => { this.loadFile(newFilePath); })
     reaction(() => canvasStore.saveNodesToFilePath, filePath => { this.saveNodesToPath(filePath); })
-      // Bind interactions
+    // Bind interactions
     document.addEventListener('mouseup', () => { this.clearSelection(); });
     document.addEventListener('keydown', (event) => {this.delegateKeyEvent(event)});
   }
@@ -109,11 +97,7 @@ export class Canvas extends React.Component {
   }
 
   render() {
-    {/*Note: NodeEditTextBox must be out of "canvas" or the onChange does not fire correctly*/}
     return <>
-      <div className="canvas2"/>
-      {/* @ts-ignore: ref is incompatible? */}
-      <NodeEditTextBox ref={this.nodeEditTextBoxRef}/>
       <RendererComp renderer={this.renderer}/>
     </>
   }
