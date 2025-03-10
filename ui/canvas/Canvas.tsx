@@ -57,7 +57,7 @@ export class Canvas extends React.Component {
   }
 
   editSelectedNode(initialText?: string) {
-    this.renderer?.onNodeEdit(notNull(this.getSelectedNode()));
+    this.renderer?.onNodeEdit(notNull(this.getSelectedNode()).renderID);
   }
   
   // File functions

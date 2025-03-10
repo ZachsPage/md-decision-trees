@@ -46,10 +46,9 @@ export class NodeCreator {
       return;
     }
     let renderer = notNull(this.render);
-    let newNode = notNull(renderer.createNode(type as fromRust.NodeType, optParentNode));
-    renderer.focusOnNode(newNode.cyNode);
-    renderer.onNodeSelect(newNode.cyNode);
-    this.canvas?.editSelectedNode("");
+    let newNodeId = notNull(renderer.createNode(type as fromRust.NodeType, optParentNode));
+    renderer.focusOnNode(newNodeId);
+    renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode(""));
   }
 
   getNodeTypeStringFromPressedKey(key: String): String | null {

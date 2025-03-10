@@ -7,7 +7,7 @@ import {notNull} from "../../Utils"
 export class SelectedNode {
   node: fromRust.Node
   renderID: string
-  box: RenderBox
+  box: RenderBox //< TODO: can delete this since dont need NodeEditBox anymore
   constructor(node: fromRust.Node, renderID: string, box: RenderBox) {
     this.node = node; this.renderID = renderID; this.box = box;
   }
@@ -55,6 +55,7 @@ export class NodeSelector {
     }
     const maybeNewNodeId = this?.nodeTraverser?.node()?.id;
     if (maybeNewNodeId != this.selectedNode?.renderID) {
+      console.log("handleKeyEvent", maybeNewNodeId)
       this?.renderer?.onNodeSelect(maybeNewNodeId);
     }
     return true;
