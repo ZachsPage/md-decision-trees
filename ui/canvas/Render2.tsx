@@ -37,27 +37,13 @@ export class RenderBox {
 // Triggered when a node is clicked
 type OnNodeClickCB = (selectedNode: SelectedNode) => void;
 
-type NodeId = string;
+export type NodeId = string;
 
 export class Renderer {
   // Public interaction functions
-  updateNodeData(renderID: string, attribute: string, value: any) {
-    // Edit the node text through the cy API to update the graph
-    /*
-    const nodeToEdit = this.cy.getElementById(renderID)
-    nodeToEdit.data(`nodeData.dataNode.${attribute}`, value);
-    this.doLayout();
-    this.onNodeSelect(nodeToEdit); //< Cover case where text increases box size - update RenderBox
-    */
-  }
-
-  focusOnNode(cyNode: cytoscape.NodeSingular, padding: number = 250) {
-    //this.cy.fit(cyNode, padding);
-  }
-  
-  newNodeTraverseSelection(optStartingNode: SelectedNode | null)/*: NodeTraverseSelection | null*/ {
-    const startingNodeId = optStartingNode ? optStartingNode.renderID : 0
-    return new NodeTraverseSelection(this, this.graph.node(startingNodeId));
+  newNodeTraverseSelection(optStartingNode: SelectedNode | null): NodeTraverseSelection | null {
+    const startingNodeId = optStartingNode ? optStartingNode.renderID : "0"
+    return new NodeTraverseSelection(this, startingNodeId);
   }
 
   createNode(type: fromRust.NodeType, parent: SelectedNode | undefined | null): NodeId {
@@ -73,18 +59,15 @@ export class Renderer {
     return newNodeID;
   }
 
-  removeNode(renderID: string) {
-    /*
-    const nodeToStartRemovals = this.cy.getElementById(renderID)
-    new DFS(nodeToStartRemovals).visitedNodes.forEach(node => this.cy.remove(node));
+  removeNode(renderID: NodeId) {
+    const nodesToRemove = new DFS([renderID], this).visitedNodes
+    this.nodes = this.nodes.filter(node => !nodesToRemove.includes(node.id));
     this.doLayout();
-    */
   }
 
-  getNodes()/*: fromRust.Node[]*/ {
+  getNodes(): fromRust.Node[] {
     // Get the nodes in DFS order since this will match the layout of the files
-    //return new DFS(this.cy.nodes().roots()).visitedNodes.map(x => x.data().nodeData.dataNode);
-    return this.nodes;
+    return new DFS([], this).visitedNodes.map(x => this.nodes.find(node => node.id === x)?.data.dataNode);
   }
 
   // Render functions
@@ -172,10 +155,10 @@ export class Renderer {
   edges: FlowEdge[] = [];
   renderGraph: any = null;
   doubleClickNode: any = null;
+  nodeBeingEdited: Element | null = null;
 
   // Init
   constructor(nodeClickCB : OnNodeClickCB) {
-    // Inits
     this.nodeClickCB = nodeClickCB;
     this._setUpGraph();
     this.doLayout();
@@ -183,11 +166,7 @@ export class Renderer {
 
   _setUpGraph() {
     this.graph.setDefaultEdgeLabel(() => ({}));
-    this.graph.setGraph({
-      rankdir: "TB", 
-      ranksep: 100,
-      nodesep: 200,
-    });
+    this.graph.setGraph({rankdir: "TB", ranksep: 100, nodesep: 200});
   }
 
   setRenderGraphFcn(renderGraph: any) { this.renderGraph = renderGraph; }
@@ -216,35 +195,37 @@ export class Renderer {
     this._rerenderNodes(cb);
   }
 
-  nodeBeingEdited: Element | null = null;
-
-  isEditingNode() { return this.nodeBeingEdited !== null; }
+  isEditingNode() { 
+    if (this.nodeBeingEdited !== null) { // Refocus the text box due to bug with focus on create
+      document.getElementById(`${this.nodeBeingEdited?.id}-text`)?.focus();
+      return true;
+    }
+    return false;
+  }
 
   onNodeEdit(nodeID: NodeId) {
     const nodeToEdit = document.getElementById(`custom-node-${nodeID}`)
     if (!nodeToEdit) {
       console.log("Cannot find node to edit ", nodeID)
     } else {
-      console.log("Editing node ", nodeID);
       this.nodeBeingEdited = nodeToEdit;
-      nodeToEdit.focus();
       this.nodeBeingEdited.dispatchEvent(new MouseEvent("dblclick", {bubbles: true, cancelable: false}));
+      document.getElementById(`custom-node-${nodeID}-text`)?.focus();
     }
   }
 
   onNodeEditFinish() {
-    this.nodeBeingEdited?.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true, cancelable: true}));
-    this.nodeBeingEdited = null;
+    if (this.isEditingNode()) {
+      this.nodeBeingEdited?.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true, cancelable: true}));
+      this.nodeBeingEdited = null;
+    }
   }
 };
 
 function CustomNodeComp({ data, id }: NodeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.label);
-  const handleDoubleClick = useCallback(() => { 
-    setIsEditing(true); 
-    console.log("Double click", id);
-  }, []);
+  const handleDoubleClick = useCallback(() => { setIsEditing(true); }, []);
   const handleKeyDown = useCallback((evt: React.KeyboardEvent) => {
     if (evt.key === 'Enter' || evt.key === 'Escape') {
       setIsEditing(false);
@@ -252,6 +233,7 @@ function CustomNodeComp({ data, id }: NodeProps) {
     }
   }, [id, text, data]);
   const nodeElementId = `custom-node-${id}`;
+  const nodeElementTextBoxId = `custom-node-${id}-text`;
  
   return (
     <div id={nodeElementId} onDoubleClick={handleDoubleClick} onKeyDown={handleKeyDown}>
@@ -259,6 +241,7 @@ function CustomNodeComp({ data, id }: NodeProps) {
       {!isEditing
       ? <div className="node-content">{text}</div> 
       : <input
+          id={nodeElementTextBoxId}
           type="text"
           value={text}
           onChange={e => setText(e.target.value)}
@@ -297,11 +280,12 @@ export const RendererComp = (({renderer}: {renderer: Renderer}) => {
     });
 
     return (
-      <ReactFlow fitView defaultEdgeOptions={{animated: true}}
+      <ReactFlow fitView defaultEdgeOptions={{animated: false}}
         nodes={nodesWithHandlers} edges={edges}
         onNodesChange={onNodesChange}
         nodeTypes={nodeTypes} 
         zoomOnDoubleClick={false}
+        nodesDraggable={false}
       >
         <Background />
         <Controls />

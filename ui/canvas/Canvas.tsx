@@ -27,6 +27,7 @@ export class Canvas extends React.Component {
   delegateKeyEvent(event: KeyboardEvent) {
     const escPressed = (event.key === "Escape");
     const editKeyPressed : boolean = (event.ctrlKey && event.key === 'e');
+    console.log(`Key pressed: ${event.key}`);
     if (this.handleNodeTextEdit(editKeyPressed, escPressed)) { return; } //< If editing, ensure text keys are not used
     if (escPressed) { this.clearSelection(); }
     if (this?.nodeCreator?.handleKeyEvent(event) || this?.nodeSelector?.handleKeyEvent(event)) { return; }
@@ -42,6 +43,7 @@ export class Canvas extends React.Component {
   }
 
   clearSelection() {
+    this.renderer?.onNodeEditFinish();
     this.nodeSelector?.setSelectedNode(null);
   }
 

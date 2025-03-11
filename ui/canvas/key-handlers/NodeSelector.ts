@@ -55,7 +55,6 @@ export class NodeSelector {
     }
     const maybeNewNodeId = this?.nodeTraverser?.node()?.id;
     if (maybeNewNodeId != this.selectedNode?.renderID) {
-      console.log("handleKeyEvent", maybeNewNodeId)
       this?.renderer?.onNodeSelect(maybeNewNodeId);
     }
     return true;
