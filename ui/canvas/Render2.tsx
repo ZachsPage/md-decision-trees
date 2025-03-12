@@ -40,10 +40,15 @@ type OnNodeClickCB = (selectedNode: SelectedNode) => void;
 export type NodeId = string;
 
 export class Renderer {
+  nodeTraverser: NodeTraverseSelection | null = null;
+
   // Public interaction functions
-  newNodeTraverseSelection(optStartingNode: SelectedNode | null): NodeTraverseSelection | null {
+  getNodeTraverser(optStartingNode: SelectedNode | null): NodeTraverseSelection {
     const startingNodeId = optStartingNode ? optStartingNode.renderID : "0"
-    return new NodeTraverseSelection(this, startingNodeId);
+    if (!this.nodeTraverser || !optStartingNode) {
+      this.nodeTraverser = new NodeTraverseSelection(this, startingNodeId);
+    }
+    return notNull(this.nodeTraverser);
   }
 
   createNode(type: fromRust.NodeType, parent: SelectedNode | undefined | null): NodeId {
@@ -60,9 +65,18 @@ export class Renderer {
   }
 
   removeNode(renderID: NodeId) {
-    const nodesToRemove = new DFS([renderID], this).visitedNodes
+    const nodesToRemove: NodeId[] = new DFS([renderID], this).visitedNodes
+    let parentToSelectId: NodeId | null = this.nodes.find(node => node.id === nodesToRemove[0])?.data.dataNode.parent_idxs[0];
+    parentToSelectId = parentToSelectId ? parentToSelectId : "0";
+    // Need to remove from the graph (will also remove edges), but also remove them on our end
+    nodesToRemove.forEach(nodeID => { this.graph.removeNode(nodeID); });
     this.nodes = this.nodes.filter(node => !nodesToRemove.includes(node.id));
+    this.edges = this.edges.filter(edge => {
+      return !nodesToRemove.includes(edge.source) && !nodesToRemove.includes(edge.target);
+    });
     this.doLayout();
+    this.onNodeSelect(parentToSelectId); 
+    this.nodeTraverser = new NodeTraverseSelection(this, parentToSelectId);
   }
 
   getNodes(): fromRust.Node[] {
@@ -81,7 +95,7 @@ export class Renderer {
       let parentIDs = node.parent_idxs.map(id => id.toString());
       this.renderNode(node, parentIDs); 
     });
-    this.doLayout(true);
+    this.doLayout();
   }
 
   renderNode(newNode: fromRust.Node, parentIDs: string[]): NodeId {
@@ -133,7 +147,7 @@ export class Renderer {
     }
   }
 
-  doLayout(resetView: boolean = false) {
+  doLayout() {
     this.nodes.forEach(node => { this.graph.setNode(node.id, node); });
     this.edges.forEach(edge => { this.graph.setEdge(edge.source, edge.target); });
     dagre.layout(this.graph);

@@ -17,7 +17,6 @@ export class SelectedNode {
 export class NodeSelector {
   renderer?: Renderer;
   selectedNode: SelectedNode | null = null;
-  nodeTraverser: NodeTraverseSelection | null = null;
 
   constructor(renderer: Renderer) {
     this.renderer = renderer;
@@ -25,9 +24,8 @@ export class NodeSelector {
 
   setSelectedNode(newNode: SelectedNode | null) { 
     this.selectedNode = newNode;
-    if (!newNode && this.nodeTraverser) {
-      this.nodeTraverser?.clear();
-      this.nodeTraverser = null;
+    if (!newNode) {
+      this._nodeTraverser()?.clear();
     }
   }
 
@@ -35,25 +33,26 @@ export class NodeSelector {
     return this.selectedNode; 
   }
 
+  _nodeTraverser() : NodeTraverseSelection {
+    return notNull(this.renderer).getNodeTraverser(this.selectedNode);
+  }
+
   /// Return true if event has handled
   handleKeyEvent(event: KeyboardEvent): boolean {
     if (event.ctrlKey) { return false; }
     if (event.key != 'j' && event.key != 'k' && event.key != 'h' && event.key != 'l') { return false; }
-    if (!this.nodeTraverser) {
-      this.nodeTraverser = notNull(this.renderer?.newNodeTraverseSelection(this.selectedNode));
-    }
     if (!this.selectedNode) {
       /* Start at first node instead of going that direction immediately */
     } else if (event.key === 'j') {
-      this.nodeTraverser?.moveDown();
+      this._nodeTraverser().moveDown();
     } else if (event.key === 'k') {
-      this.nodeTraverser?.moveUp();
+      this._nodeTraverser().moveUp();
     } else if (event.key === 'h') {
-      this.nodeTraverser?.moveLeft();
+      this._nodeTraverser().moveLeft();
     } else if (event.key === 'l') {
-      this.nodeTraverser?.moveRight();
+      this._nodeTraverser().moveRight();
     }
-    const maybeNewNodeId = this?.nodeTraverser?.node()?.id;
+    const maybeNewNodeId = this?._nodeTraverser().node()?.id;
     if (maybeNewNodeId != this.selectedNode?.renderID) {
       this?.renderer?.onNodeSelect(maybeNewNodeId);
     }
