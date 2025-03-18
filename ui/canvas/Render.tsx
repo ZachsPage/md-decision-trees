@@ -215,7 +215,7 @@ export class Renderer {
 
   onNodeEditFinish() {
     if (this.isEditingNode()) {
-      this.nodeBeingEdited?.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true, cancelable: true}));
+      this.nodeBeingEdited?.dispatchEvent(new KeyboardEvent("keydown", {key: "e", bubbles: true, cancelable: true}));
       this.nodeBeingEdited = null;
     }
   }
@@ -236,7 +236,7 @@ function CustomNodeComp({ data, id }: NodeProps) {
     textElem?.setSelectionRange(textLen, textLen); //< Set cursor to end
   }, []);
   const handleKeyDown = useCallback((evt: React.KeyboardEvent) => {
-    if (evt.key === 'Enter' || evt.key === 'Escape') {
+    if (evt.key === 'e' || evt.key === 'Escape') {
       setIsEditing(false);
       data.onTextChange(id, text); // Set in nodesWithHandlers
     }
