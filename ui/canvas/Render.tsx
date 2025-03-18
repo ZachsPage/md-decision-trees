@@ -27,6 +27,30 @@ type OnNodeClickCB = (selectedNode: SelectedNode) => void;
 
 export type NodeId = string;
 
+// From copilot - used to feed height / width into dagre to avoid overlapping nodes
+function getTextDimensions(text: string, minWidth: number, maxWidth: number, font: string = '16px Arial'): { width: number, height: number } {
+  const canvas = document.createElement('canvas') as HTMLCanvasElement;
+  const context = notNull(canvas.getContext('2d'))
+  context.font = font;
+  const words = text.split(' ');
+  let line = '';
+  let width = minWidth;
+  const lineHeight = parseInt(font, 10); // Initial height based on font size
+  let height = lineHeight;
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + ' ';
+    const testWidth = context.measureText(testLine).width;
+    if (testWidth > maxWidth && i > 0) {
+      line = words[i] + ' ';
+      height += lineHeight;
+    } else {
+      line = testLine;
+      width = Math.max(width, testWidth);
+    }
+  }
+  return {width: Math.min(width, maxWidth), height};
+}
+
 export class Renderer {
   nodeTraverser: NodeTraverseSelection | null = null;
 
@@ -138,7 +162,11 @@ export class Renderer {
   }
 
   doLayout() {
-    this.nodes.forEach(node => { this.graph.setNode(node.id, node); });
+    this.nodes.forEach(node => { 
+      // TODO: This works okay but not great - may need to switch to a different layout library like elkjs
+      const textDim = getTextDimensions(node.data.label, 50, 190);
+      this.graph.setNode(node.id, {...node, ...textDim}); 
+    });
     this.edges.forEach(edge => { this.graph.setEdge(edge.source, edge.target); });
     dagre.layout(this.graph);
     this.nodes.forEach(node => {
