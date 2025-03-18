@@ -20,16 +20,7 @@ import 'reactflow/dist/style.css';
 
 import * as fromRust from "../bindings/bindings"
 import {SelectedNode} from "./key-handlers/NodeSelector"
-import {DFS, NodeTraverseSelection} from "./NodeTraveseral2"
-
-// Allows user to know an elements render location / size / info
-export class RenderBox {
-  x: number = 0;
-  y: number = 0;
-  height: number = 0;
-  width: number = 0;
-  color: string = ""
-}
+import {DFS, NodeTraverseSelection} from "./NodeTraveseral"
 
 // Triggered when a node is clicked
 type OnNodeClickCB = (selectedNode: SelectedNode) => void;
@@ -121,10 +112,12 @@ export class Renderer {
     return newCanvasNode.id;
   }
 
+  // TODO: move to css
   _getNodesStyle(node_type: any) {
     return {'background': getNodeColor(node_type), 'color': '#000000', 'border': '2px solid #000000'};
   }
 
+  // TODO: move to css
   _getEdgeStyle(relationship: any) {
     switch (relationship) {
         case 'Pro': return {stroke: '#90EE90', strokeWidth: 3};
@@ -161,10 +154,9 @@ export class Renderer {
   graph = new dagre.graphlib.Graph();
   nodeClickCB: OnNodeClickCB | null = null;
   nextNodeID: number = 0;
-  currLayout: any = null;
   nodes: FlowNode[] = [];
   edges: FlowEdge[] = [];
-  renderGraph: any = null;
+  renderGraph: any | null = null;
   doubleClickNode: any = null;
   nodeBeingEdited: Element | null = null;
 
@@ -195,7 +187,7 @@ export class Renderer {
     this.nodes.forEach(node => { 
       if (node.id === selectedNodeId) {
         node.style = { ...node.style, border: '5px solid #0000FF' };
-        selectedNode = new SelectedNode(node.data.dataNode, node.id, null);
+        selectedNode = new SelectedNode(node.data.dataNode, node.id);
       } else {
         node.style = { ...node.style, border: '2px solid #000000' };
       }

@@ -1,15 +1,14 @@
 import * as fromRust from "../../bindings/bindings"
-import {RenderBox, Renderer} from "../Render2"
-import {NodeTraverseSelection} from "../NodeTraveseral2"
+import {Renderer} from "../Render"
+import {NodeTraverseSelection} from "../NodeTraveseral"
 import {notNull} from "../../Utils"
 
 // Passes information needed for selected node
 export class SelectedNode {
   node: fromRust.Node
   renderID: string
-  box: RenderBox //< TODO: can delete this since dont need NodeEditBox anymore
-  constructor(node: fromRust.Node, renderID: string, box: RenderBox) {
-    this.node = node; this.renderID = renderID; this.box = box;
+  constructor(node: fromRust.Node, renderID: string) {
+    this.node = node; this.renderID = renderID;
   }
 }
 

@@ -6,5 +6,4 @@ export class Node {
   static newCollection(title: string) { Node.collectionTitle = title; }
 
   dataNode: fromRust.Node | undefined = undefined;
-  cyNode: any | undefined = undefined; //< TODO - get types for cytoscape.js
 }

@@ -2,8 +2,7 @@ import "./Canvas.css";
 import {errorStore} from "../stores/ErrorStore"
 import {canvasStore} from "../stores/CanvasStore"
 import {Node} from "./CanvasElems"
-import {NodeEditTextBox} from './NodeEditTextBox';
-import {Renderer, RendererComp} from "./Render2"
+import {Renderer, RendererComp} from "./Render"
 import * as fromRust from "../bindings/bindings"
 import {notNull} from "../Utils"
 import {NodeCreator} from "./key-handlers/NodeCreator"
@@ -15,8 +14,6 @@ import React from 'react';
 // What is drawn on / shows nodes
 @observer
 export class Canvas extends React.Component {
-  //nodeEditTextBoxRef: React.RefObject<typeof NodeEditTextBox>;
-  //getNodeEditTextBox(): any { return notNull(this.nodeEditTextBoxRef?.current); }
   renderer: Renderer = new Renderer( (node: SelectedNode) => {this?.nodeSelector?.setSelectedNode(node);});
   nodeCreator: NodeCreator = new NodeCreator(this, this.renderer);
   nodeSelector: NodeSelector = new NodeSelector(this.renderer);
@@ -83,7 +80,6 @@ export class Canvas extends React.Component {
   // State Change Updates
   constructor(props: any) {
     super(props);
-    //this.nodeEditTextBoxRef = React.createRef<typeof NodeEditTextBox>();
     // Bind reactions to store value changes
     reaction(() => canvasStore.filePath, newFilePath => { this.loadFile(newFilePath); })
     reaction(() => canvasStore.saveNodesToFilePath, filePath => { this.saveNodesToPath(filePath); })
