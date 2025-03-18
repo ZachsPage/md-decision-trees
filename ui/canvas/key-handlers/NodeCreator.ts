@@ -47,7 +47,7 @@ export class NodeCreator {
     }
     let renderer = notNull(this.render);
     let newNodeId = notNull(renderer.createNode(type as fromRust.NodeType, optParentNode));
-    renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode(""));
+    renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode());
   }
 
   getNodeTypeStringFromPressedKey(key: String): String | null {

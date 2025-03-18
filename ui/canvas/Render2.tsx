@@ -9,15 +9,12 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   applyNodeChanges,
-  applyEdgeChanges,
   NodeChange,
   Background,
   Controls,
   NodeProps,
   Handle,
   Position,
-  useReactFlow,
-  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -108,7 +105,7 @@ export class Renderer {
       rank: this._getRank(newNode.type_is),
       style: this._getNodesStyle(newNode.type_is),
       position: { x: 0, y: 0 },
-      type: 'customNodeComp',
+      type: 'customNodeComp', // Must align with field name in nodeTypes
     }
     this.nodes.push(newCanvasNode);
     ++this.nextNodeID;
@@ -218,14 +215,10 @@ export class Renderer {
   }
 
   onNodeEdit(nodeID: NodeId) {
-    const nodeToEdit = document.getElementById(`custom-node-${nodeID}`)
-    if (!nodeToEdit) {
-      console.log("Cannot find node to edit ", nodeID)
-    } else {
-      this.nodeBeingEdited = nodeToEdit;
-      this.nodeBeingEdited.dispatchEvent(new MouseEvent("dblclick", {bubbles: true, cancelable: false}));
-      document.getElementById(`custom-node-${nodeID}-text`)?.focus();
-    }
+    const nodeToEdit = notNull(document.getElementById(`custom-node-${nodeID}`)) as HTMLElement
+    this.nodeBeingEdited = nodeToEdit;
+    this.nodeBeingEdited.dispatchEvent(new MouseEvent("dblclick", {bubbles: true, cancelable: false}));
+    document.getElementById(`custom-node-${nodeID}-text`)?.focus();
   }
 
   onNodeEditFinish() {
@@ -237,29 +230,40 @@ export class Renderer {
 };
 
 function CustomNodeComp({ data, id }: NodeProps) {
+  const htmlRef = useRef(null); //< Used to focus / auto-size the text area
+  const nodeElementId = `custom-node-${id}`; //< Used to mock click the element to edit
+  const nodeElementTextBoxId = `custom-node-${id}-text`; //< Use to externally focus on create due to bug
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.label);
-  const handleDoubleClick = useCallback(() => { setIsEditing(true); }, []);
+  const handleDoubleClick = useCallback(async () => { 
+    setIsEditing(true); 
+    await new Promise(resolve => setTimeout(resolve));
+    const textElem = htmlRef?.current as HTMLTextAreaElement | null;
+    textElem?.focus();
+    const textLen = data.label.length; // TODO: doesnt align with text.length?
+    textElem?.setSelectionRange(textLen, textLen); //< Set cursor to end
+  }, []);
   const handleKeyDown = useCallback((evt: React.KeyboardEvent) => {
     if (evt.key === 'Enter' || evt.key === 'Escape') {
       setIsEditing(false);
-      data.onChange(id, text);
+      data.onTextChange(id, text); // Set in nodesWithHandlers
     }
   }, [id, text, data]);
-  const nodeElementId = `custom-node-${id}`;
-  const nodeElementTextBoxId = `custom-node-${id}-text`;
  
   return (
     <div id={nodeElementId} onDoubleClick={handleDoubleClick} onKeyDown={handleKeyDown}>
       <Handle type="target" position={Position.Top} />
       {!isEditing
       ? <div className="node-content">{text}</div> 
-      : <input
-          id={nodeElementTextBoxId}
-          type="text"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          autoFocus
+      : <textarea ref={htmlRef} id={nodeElementTextBoxId} value={text} autoFocus
+          onChange={(e) => { // Set text and resize to show all text
+            setText(e.target.value)
+            let thisHTML = notNull(htmlRef.current);
+            // https://stackoverflow.com/questions/76048428/html-textarea-why-does-textarea-style-height-textarea-scrollheight-px-exp
+            if (thisHTML.scrollHeight > thisHTML.clientHeight) {
+              thisHTML.style.height = thisHTML.scrollHeight + "px";
+            }
+          }}
         />}
       <Handle type="source" position={Position.Bottom} />
     </div>
@@ -272,12 +276,16 @@ export const RendererComp = (({renderer}: {renderer: Renderer}) => {
     const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
 
     // Update initialNodes to include the text change handler
-    const handleNodeTextChange = useCallback((nodeId: string, newText: string) => {
-      setNodes((nds) => nds?.map((node) => {
-        return node.id === nodeId ? {...node, data: {...node.data, label: newText}} : node;
+    const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string) => {
+      setNodes((changedNodes) => changedNodes?.map((node) => {
+        if (node.id === changedNodeId) {
+          node.data.label = newText;
+          node.data.dataNode.text = newText;
+        }
+        return node;
       }));
     }, [setNodes]);
-    const nodesWithHandlers = nodes?.map(node => ({...node, data: { ...node.data, onChange: handleNodeTextChange}}));
+    const nodesWithHandlers = nodes?.map(node => {node.data.onTextChange = onNodeTextChange; return node;});
 
     const onNodesChange = useCallback((changes: NodeChange[]) => {
       setNodes((changedNodes) => applyNodeChanges(changes, changedNodes));
@@ -299,7 +307,6 @@ export const RendererComp = (({renderer}: {renderer: Renderer}) => {
         onNodesChange={onNodesChange}
         nodeTypes={nodeTypes} 
         zoomOnDoubleClick={false}
-        nodesDraggable={false}
       >
         <Background />
         <Controls />

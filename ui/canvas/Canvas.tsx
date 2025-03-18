@@ -57,7 +57,7 @@ export class Canvas extends React.Component {
     return !userIsEditing; //< Flipped state since toggleEditState
   }
 
-  editSelectedNode(initialText?: string) {
+  editSelectedNode() {
     this.renderer?.onNodeEdit(notNull(this.getSelectedNode()).renderID);
   }
   
