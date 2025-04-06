@@ -16,18 +16,9 @@ importers:
       '@tauri-apps/api':
         specifier: ^1.5.0
         version: 1.6.0
-      '@types/cytoscape':
-        specifier: ^3.19.16
-        version: 3.21.9
       babel-plugin-syntax-decorators:
         specifier: ^6.13.0
         version: 6.13.0
-      cytoscape:
-        specifier: ^3.28.1
-        version: 3.31.0
-      cytoscape-dagre:
-        specifier: ^2.5.0
-        version: 2.5.0(cytoscape@3.31.0)
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -65,9 +56,6 @@ importers:
       '@tauri-apps/cli':
         specifier: ^1.5.0
         version: 1.6.3
-      '@types/cytoscape-dagre':
-        specifier: ^2.3.3
-        version: 2.3.3
       '@types/dagre':
         specifier: ^0.7.52
         version: 0.7.52
@@ -538,12 +526,6 @@ packages:
 
   '@types/cacheable-request@6.0.3':
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
-
-  '@types/cytoscape-dagre@2.3.3':
-    resolution: {integrity: sha512-FJBsNMbBZpqNwT6rp5leVYMevWUjnyD1QS8erNMAMWoBifvaVUklXIjE+bllLDSowjM3abXuRvljliSXUU+d1A==}
-
-  '@types/cytoscape@3.21.9':
-    resolution: {integrity: sha512-JyrG4tllI6jvuISPjHK9j2Xv/LTbnLekLke5otGStjFluIyA9JjgnvgZrSBsp8cEDpiTjwgZUZwpPv8TSBcoLw==}
 
   '@types/d3-array@3.2.1':
     resolution: {integrity: sha512-Y2Jn2idRrLzUfAKV2LyRImR+y4oa2AntrgID95SHJxuMUrkNXmanDSed71sRNZysveJVt1hLLemQZIady0FpEg==}
@@ -1130,15 +1112,6 @@ packages:
   currently-unhandled@0.4.1:
     resolution: {integrity: sha512-/fITjgjGU50vjQ4FH6eUoYu+iUoUKIXws2hL15JJpIR+BbTxaXQsMuuyjtNh2WqsSBS5nsaZHFsFecyw5CCAng==}
     engines: {node: '>=0.10.0'}
-
-  cytoscape-dagre@2.5.0:
-    resolution: {integrity: sha512-VG2Knemmshop4kh5fpLO27rYcyUaaDkRw+6PiX4bstpB+QFt0p2oauMrsjVbUamGWQ6YNavh7x2em2uZlzV44g==}
-    peerDependencies:
-      cytoscape: ^3.2.22
-
-  cytoscape@3.31.0:
-    resolution: {integrity: sha512-zDGn1K/tfZwEnoGOcHc0H4XazqAAXAuDpcYw9mUnUjATjqljyCNGJv8uEvbvxGaGHaVshxMecyl6oc6uKzRfbw==}
-    engines: {node: '>=0.10'}
 
   d3-color@3.1.0:
     resolution: {integrity: sha512-zg/chbXyeBtMQ1LbD/WSoW2DpC3I0mpmPdW+ynRTj/x2DAWYrIY7qeZIHidozwV24m4iavr15lNwIwLxRmOxhA==}
@@ -4035,12 +4008,6 @@ snapshots:
       '@types/node': 22.13.1
       '@types/responselike': 1.0.3
 
-  '@types/cytoscape-dagre@2.3.3':
-    dependencies:
-      '@types/cytoscape': 3.21.9
-
-  '@types/cytoscape@3.21.9': {}
-
   '@types/d3-array@3.2.1': {}
 
   '@types/d3-axis@3.0.6':
@@ -4727,13 +4694,6 @@ snapshots:
   currently-unhandled@0.4.1:
     dependencies:
       array-find-index: 1.0.2
-
-  cytoscape-dagre@2.5.0(cytoscape@3.31.0):
-    dependencies:
-      cytoscape: 3.31.0
-      dagre: 0.8.5
-
-  cytoscape@3.31.0: {}
 
   d3-color@3.1.0: {}
 
