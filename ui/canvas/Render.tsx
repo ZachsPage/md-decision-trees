@@ -1,6 +1,5 @@
 import {Node} from "./CanvasElems"
 import {notNull} from "../Utils"
-import {getNodeColor} from "./Utils"
 import {useCallback, useState, useMemo, useRef} from 'react';
 import dagre from 'dagre';
 import ReactFlow, { 
@@ -17,6 +16,7 @@ import ReactFlow, {
   Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import './Canvas.css';
 
 import * as fromRust from "../bindings/bindings"
 import {SelectedNode} from "./key-handlers/NodeSelector"
@@ -117,8 +117,7 @@ export class Renderer {
         label: newNode.text,
         dataNode: newNode,
       },
-      rank: this._getRank(notNull(newNode.type_is)),
-      style: this._getNodesStyle(notNull(newNode.type_is)),
+      className: `node-${newNode.type_is?.toLowerCase()}`,
       position: { x: 0, y: 0 },
       type: 'customNodeComp', // Must align with field name in nodeTypes
     }
@@ -126,39 +125,18 @@ export class Renderer {
     ++this.nextNodeID;
     parentIDs.forEach((parentNodeID: NodeId) => { // Connect to each parent
       const childNodeID = notNull(newCanvasNode.id);
+      const edgeType = newNode.type_is == "Pro" ? "pro" : newNode.type_is == "Con" ? "con" : "default"
       this.edges.push({
         source: parentNodeID,
         target: childNodeID,
         id: `e${parentNodeID}-${childNodeID}`,
-        style: this._getEdgeStyle(notNull(newNode.type_is)),
+        style: {
+          stroke: `var(--edge-${edgeType}-color)`,
+          strokeWidth: 3
+        }
       });
     });
     return newCanvasNode.id;
-  }
-
-  // TODO: move to css
-  _getNodesStyle(nodeType: fromRust.NodeType): React.CSSProperties {
-    return {'background': getNodeColor(nodeType), 'color': '#000000', 'border': '2px solid #000000'};
-  }
-
-  // TODO: move to css
-  _getEdgeStyle(relationship: fromRust.NodeType): React.CSSProperties {
-    switch (relationship) {
-        case 'Pro': return {stroke: '#90EE90', strokeWidth: 3};
-        case 'Con': return {stroke: '#FFB6B6', strokeWidth: 3};
-        default: return {stroke: '#666666', strokeWidth: 3};
-    }
-  };
-
-  _getRank(nodeType: fromRust.NodeType): number {
-    switch (nodeType) { 
-      case 'Decision': return 0;
-      case 'Option': return 1;
-      case 'Pro': return 2;
-      case 'Con': return 3;
-      case 'Note': return 4;
-      default: return 5;
-    }
   }
 
   doLayout(): void {
@@ -220,10 +198,10 @@ export class Renderer {
     let selectedNode = null as SelectedNode | null;
     this.nodes.forEach(node => { 
       if (node.id === selectedNodeId) {
-        node.style = { ...node.style, border: '5px solid #0000FF' };
+        node.className = `${node.className} node-selected`;
         selectedNode = new SelectedNode(node.data.dataNode, node.id);
       } else {
-        node.style = { ...node.style, border: '2px solid #000000' };
+        node.className = node.className?.replace(' node-selected', '') || '';
       }
     });
     if (selectedNode) {
@@ -286,17 +264,7 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
           id={nodeElementTextBoxId} 
           value={text} 
           autoFocus
-          style={{
-            background: data.dataNode.type_is ? getNodeColor(data.dataNode.type_is) : '#ffffff',
-            color: '#000000',
-            border: 'none',
-            outline: 'none',
-            width: '100%',
-            resize: 'none',
-            overflow: 'hidden',
-            padding: '0',
-            margin: '0'
-          }}
+          className="node-textarea"
           onChange={(e) => { // Set text and resize to show all text
             setText(e.target.value)
             let thisHTML = notNull(htmlRef.current);
