@@ -14,6 +14,8 @@ import ReactFlow, {
   NodeProps,
   Handle,
   Position,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './Canvas.css';
@@ -21,6 +23,7 @@ import './Canvas.css';
 import * as fromRust from "../bindings/bindings"
 import {SelectedNode} from "./key-handlers/NodeSelector"
 import {DFS, NodeTraverseSelection} from "./NodeTraveseral"
+import NodeContextMenu from '../components/NodeContextMenu';
 
 // Triggered when a node is clicked
 type OnNodeClickCB = (selectedNode: SelectedNode) => void;
@@ -279,46 +282,122 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   );
 }
 
-export const RendererComp = (({renderer}: {renderer: Renderer}): JSX.Element => {
-    const [nodes, setNodes] = useNodesState([]);
-    const [edges, setEdges] = useEdgesState([]);
-    const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
+// Inner component that uses ReactFlow hooks
+const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element => {
+  const [nodes, setNodes] = useNodesState([]);
+  const [edges, setEdges] = useEdgesState([]);
+  const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    nodeId: string;
+    nodeType: string;
+  }>({
+    show: false,
+    x: 0,
+    y: 0,
+    nodeId: '',
+    nodeType: '',
+  });
+  const { project } = useReactFlow();
 
-    // Update initialNodes to include the text change handler
-    const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string): void => {
-      setNodes((changedNodes) => changedNodes?.map((node) => {
-        if (node.id === changedNodeId) {
-          node.data.label = newText;
-          node.data.dataNode.text = newText;
-        }
-        return node;
-      }));
-    }, [setNodes]);
-    const nodesWithHandlers = nodes?.map(node => {node.data.onTextChange = onNodeTextChange; return node;});
-
-    const onNodesChange = useCallback((changes: NodeChange[]): void => {
-      setNodes((changedNodes) => applyNodeChanges(changes, changedNodes));
-    }, [setNodes]);
-    
-    renderer.setRenderGraphFcn( async (tmpNodes: FlowNode[], tmpEdges: FlowEdge[], renderedCB: (() => void) | undefined): Promise<void> => { 
-      setNodes([...tmpNodes]); 
-      setEdges([...tmpEdges]); // Copy to force re-render, or new edges from createNode wont show up
-      if (renderedCB) { // Waits for re-render to finish before calling the callback
-        // - Used to ensure the node element is available before caller uses something like onNodeEdit
-        await new Promise(resolve => setTimeout(resolve));
-        renderedCB();
+  // Update initialNodes to include the text change handler
+  const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string): void => {
+    setNodes((changedNodes) => changedNodes?.map((node) => {
+      if (node.id === changedNodeId) {
+        node.data.label = newText;
+        node.data.dataNode.text = newText;
       }
-    });
+      return node;
+    }));
+  }, [setNodes]);
+  const nodesWithHandlers = nodes?.map(node => {node.data.onTextChange = onNodeTextChange; return node;});
 
-    return (
+  const onNodesChange = useCallback((changes: NodeChange[]): void => {
+    setNodes((changedNodes) => applyNodeChanges(changes, changedNodes));
+  }, [setNodes]);
+  
+  renderer.setRenderGraphFcn( async (tmpNodes: FlowNode[], tmpEdges: FlowEdge[], renderedCB: (() => void) | undefined): Promise<void> => { 
+    setNodes([...tmpNodes]); 
+    setEdges([...tmpEdges]); // Copy to force re-render, or new edges from createNode wont show up
+    if (renderedCB) { // Waits for re-render to finish before calling the callback
+      // - Used to ensure the node element is available before caller uses something like onNodeEdit
+      await new Promise(resolve => setTimeout(resolve));
+      renderedCB();
+    }
+  });
+
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: FlowNode) => {
+    // Prevent the default context menu
+    event.preventDefault();
+    
+    // Get the node type from the className
+    const nodeType = node.className?.includes('pro') ? 'pro' : 
+                     node.className?.includes('con') ? 'con' : '';
+    
+    // Only show context menu for Pro or Con nodes
+    if (nodeType === 'pro' || nodeType === 'con') {
+      // Use the client coordinates directly instead of projecting
+      setContextMenu({
+        show: true,
+        x: event.clientX,
+        y: event.clientY,
+        nodeId: node.id,
+        nodeType: nodeType,
+      });
+    }
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setContextMenu({ ...contextMenu, show: false });
+  }, [contextMenu]);
+
+  const handleMakeProFor = useCallback(() => {
+    // This will be implemented in the next step
+    console.log('Make Pro for...', contextMenu.nodeId);
+    setContextMenu({ ...contextMenu, show: false });
+  }, [contextMenu]);
+
+  const handleMakeConFor = useCallback(() => {
+    // This will be implemented in the next step
+    console.log('Make Con for...', contextMenu.nodeId);
+    setContextMenu({ ...contextMenu, show: false });
+  }, [contextMenu]);
+
+  return (
+    <>
       <ReactFlow fitView defaultEdgeOptions={{animated: false}}
         nodes={nodesWithHandlers} edges={edges}
         onNodesChange={onNodesChange}
         nodeTypes={nodeTypes} 
         zoomOnDoubleClick={false}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneClick={onPaneClick}
       >
         <Background />
         <Controls />
       </ReactFlow>
-    );
+      
+      {contextMenu.show && (
+        <NodeContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          nodeType={contextMenu.nodeType}
+          onClose={() => setContextMenu({ ...contextMenu, show: false })}
+          onMakeProFor={handleMakeProFor}
+          onMakeConFor={handleMakeConFor}
+        />
+      )}
+    </>
+  );
+};
+
+// Wrapper component that provides the ReactFlow context
+export const RendererComp = (({renderer}: {renderer: Renderer}): JSX.Element => {
+  return (
+    <ReactFlowProvider>
+      <RendererCompInner renderer={renderer} />
+    </ReactFlowProvider>
+  );
 });
