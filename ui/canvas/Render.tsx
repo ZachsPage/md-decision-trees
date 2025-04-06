@@ -281,7 +281,22 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
       <Handle type="target" position={Position.Top} />
       {!isEditing
       ? <div className="node-content">{text}</div> 
-      : <textarea ref={htmlRef} id={nodeElementTextBoxId} value={text} autoFocus
+      : <textarea 
+          ref={htmlRef} 
+          id={nodeElementTextBoxId} 
+          value={text} 
+          autoFocus
+          style={{
+            background: data.dataNode.type_is ? getNodeColor(data.dataNode.type_is) : '#ffffff',
+            color: '#000000',
+            border: 'none',
+            outline: 'none',
+            width: '100%',
+            resize: 'none',
+            overflow: 'hidden',
+            padding: '0',
+            margin: '0'
+          }}
           onChange={(e) => { // Set text and resize to show all text
             setText(e.target.value)
             let thisHTML = notNull(htmlRef.current);
