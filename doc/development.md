@@ -50,15 +50,44 @@ Here is a list of in order milestones to guide this project:
 * Update README to contain keyboard shortcuts - done
 
 ### Additions
+* Update to use `reactflow` instead of `cytoscape` - done
+* Add comparative node feature:
+  * Add a right / context click menu for nodes - buld should only appear if the node is a Pro or Con
+    * Make the menu show "Add relationship..." - when hovering over "Make relationship...", a sub-menu should extend to the right, and show two options: "Make Pro for..." or "Make Con for..."
+  * When "Make Pro / Con for..." is clicked:
+    * For the UI:
+      * Close the menu, and create an edge with one end connected to the selected node, and the other end connected to the users mouse - which moves when the mouse moves
+      * Then, handle the two user options:
+        * If the user presses their escape key, stop the process and remove the pending edge
+        * If the user clicks a node, finish connecting the edge to the source & target node
+    * For the backend:
+      * Discuss how to to encode these types of bullets - refer to `src-tauri/test/data/03_basic_encoding.md` for what we have now:
+        * The idea would be - instead of simply `P:` for Pro & `C:` for con, lets extend that to account for each new relationship, since we can have multiple:
+          * If it is a `Pro` for more than 1 node, encode it `P,<node's file_order 1>,<nodes file_order 2>,etc` 
+          * If a `Pro` is also a `Con`, then append `-C,<file_order 3>,<file_order 4>` etc
+          * The same should be done for a a `Con` that becomes a `Con` for multiple nodes, or is also a `Pro` for nodes
+          * Please ask any questions concerning this, or tell me any other approaches you have, or confirm that this approach sounds good
+      * For the Rust updates:
+        * Update `src-tauri/src/mdt/structs.rs : Node` to also have `pub parent_idxs_diff_type: Vec<u32> //< If type_is Pro/Con, but this node is also a Con/Pro for other nodes, hold those indexes here`
+        * When writing these new nodes out in `src-tauri/src/mdt/file_write.rs`, encode them as in the idea we previously discussed, and add some tests
+          * The test should write out a new file like `src-tauri/test/data/05_comparative_encoding.md`
+        * Populate this new field in `src-tauri/src/mdt/parsers/bullet_file_parser.rs` using the encoding idea we discussed 
+          * Add some tests that read in the `05_comparative_encoding.md` we made for the writer tests - this helps with end to end testing
+      * For the final UI updates that tie the previous tasks together:
+        * Add logic to `ui/canvas/Render.tsx` to handle the new `parent_idxs_diff_type` field:
+          * Style this as a `node-comparative` - which the node color should be a diagonal line splitting the pro / con colors (red / green)
+          * Each new edge drawn from that node should be red or green - depending on if the node is a pro / con for its connecting node
+    * Now using the previous menu changes we did to make these new connections:
+      * When a `Pro` is used to "Make a Pro for...", add the target nodes index to `parent_idxs` - if used for "Make a Con for...", then add the target nodes index to `parent_idxs_diff_type`
+      * Same for `Cons` but vice versa
 * Support ProCons like `PC-P1-C2` - this approach allows a single attribute to be a Pro for 1 or more options, but a Con for other
   * Support context menu for nodes - show "Make Pro For..." & "Make Con For..."
     * Was thinking "Break Pro/Con For...", but this will be covered with `undo` support
   * Allow user to click, then draw another line to that node - green for `Pro`, red for `Con`
   * Encode the right clicked node as `PC`, take original node as `-P<Option ID>`, and new node as `-<P/C><Option ID>`
     * Need to revist ID's for this - think its just `file_order`, though updating would be a concern later
-* Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
 * Side menu to show hot-key / color coding help
-* Update to use `reactflow` instead of `cytoscape`
+* Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
 * Update from TauriV1 to TauriV2
 * Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
 * Support multi-line entries
