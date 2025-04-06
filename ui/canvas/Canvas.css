@@ -6,3 +6,71 @@
   cursor: grab;
   background-color: lightgrey
 }
+
+:root {
+  /* Node colors */
+  --node-decision-color: #FFAF37;
+  --node-option-color: #36A9E2;
+  --node-pro-color: #6FC17C;
+  --node-con-color: #F58888;
+  --node-note-color: #FFEDB0;
+  
+  /* Edge colors */
+  --edge-pro-color: #6FC17C;
+  --edge-con-color: #F58888;
+  --edge-default-color: #666666;
+}
+
+.node-content {
+  padding: 10px;
+  max-width: 200px;
+} 
+
+/* Node styles based on type */
+.node-decision {
+  background: var(--node-decision-color);
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+.node-option {
+  background: var(--node-option-color);
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+.node-pro {
+  background: var(--node-pro-color);
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+.node-con {
+  background: var(--node-con-color);
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+.node-note {
+  background: var(--node-note-color);
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+/* Textarea styles for node editing */
+.node-textarea {
+  background: inherit;
+  color: #000000;
+  border: none;
+  outline: none;
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+}
+
+/* Selected node style */
+.node-selected {
+  border: 5px solid #0000FF;
+} 

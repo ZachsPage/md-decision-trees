@@ -15,6 +15,7 @@ Run test & see prints - `(cd src-tauri/ && cargo test -- --nocapture)`
 `pnpm tauri dev` - runs the app
 * To see `console.logs` - RightClick -> Inspect Element - Console
 `pnpm tauri build` - bundling
+* This also checks for Typescript errors - or can just run `npx tsc --noEmit`
 `pnpm add / remove <package>`
 
 ## Project Roadmap
@@ -49,10 +50,18 @@ Here is a list of in order milestones to guide this project:
 * Update README to contain keyboard shortcuts - done
 
 ### Additions
+* Support ProCons like `PC-P1-C2` - this approach allows a single attribute to be a Pro for 1 or more options, but a Con for other
+  * Support context menu for nodes - show "Make Pro For..." & "Make Con For..."
+    * Was thinking "Break Pro/Con For...", but this will be covered with `undo` support
+  * Allow user to click, then draw another line to that node - green for `Pro`, red for `Con`
+  * Encode the right clicked node as `PC`, take original node as `-P<Option ID>`, and new node as `-<P/C><Option ID>`
+    * Need to revist ID's for this - think its just `file_order`, though updating would be a concern later
 * Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
-* Support multi-line entries
-* Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
 * Side menu to show hot-key / color coding help
+* Update to use `reactflow` instead of `cytoscape`
+* Update from TauriV1 to TauriV2
+* Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
+* Support multi-line entries
 * Pop-up to confirm deletion
 * Option to create nodes as parents instead - ctrl+c, ctrl+p, then d o n 
   * Or, maybe do ctrl+j to create down & ctrl+k to create up?

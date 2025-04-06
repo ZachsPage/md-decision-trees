@@ -1,5 +1,5 @@
 import * as fromRust from "../../bindings/bindings"
-import {RenderBox, Renderer} from "../Render"
+import {Renderer} from "../Render"
 import {NodeTraverseSelection} from "../NodeTraveseral"
 import {notNull} from "../../Utils"
 
@@ -7,9 +7,8 @@ import {notNull} from "../../Utils"
 export class SelectedNode {
   node: fromRust.Node
   renderID: string
-  box: RenderBox
-  constructor(node: fromRust.Node, renderID: string, box: RenderBox) {
-    this.node = node; this.renderID = renderID; this.box = box;
+  constructor(node: fromRust.Node, renderID: string) {
+    this.node = node; this.renderID = renderID;
   }
 }
 
@@ -17,17 +16,15 @@ export class SelectedNode {
 export class NodeSelector {
   renderer?: Renderer;
   selectedNode: SelectedNode | null = null;
-  nodeTraverser: NodeTraverseSelection | null = null;
 
   constructor(renderer: Renderer) {
     this.renderer = renderer;
   }
 
-  setSelectedNode(newNode: SelectedNode | null) { 
+  setSelectedNode(newNode: SelectedNode | null): void { 
     this.selectedNode = newNode;
-    if (!newNode && this.nodeTraverser) {
-      this.nodeTraverser?.clear();
-      this.nodeTraverser = null;
+    if (!newNode) {
+      this._nodeTraverser()?.clear();
     }
   }
 
@@ -35,26 +32,28 @@ export class NodeSelector {
     return this.selectedNode; 
   }
 
+  _nodeTraverser(): NodeTraverseSelection {
+    return notNull(this.renderer).getNodeTraverser(this.selectedNode);
+  }
+
   /// Return true if event has handled
   handleKeyEvent(event: KeyboardEvent): boolean {
     if (event.ctrlKey) { return false; }
     if (event.key != 'j' && event.key != 'k' && event.key != 'h' && event.key != 'l') { return false; }
-    if (!this.nodeTraverser) {
-      this.nodeTraverser = notNull(this.renderer?.newNodeTraverseSelection(this.selectedNode));
-      if (!this.selectedNode) { return true; } /* Start at first node instead of going that direction immediately */
-    }
-    if (event.key === 'j') {
-      this.nodeTraverser?.moveDown();
+    if (!this.selectedNode) {
+      /* Start at first node instead of going that direction immediately */
+    } else if (event.key === 'j') {
+      this._nodeTraverser().moveDown();
     } else if (event.key === 'k') {
-      this.nodeTraverser?.moveUp();
+      this._nodeTraverser().moveUp();
     } else if (event.key === 'h') {
-      this.nodeTraverser?.moveLeft();
+      this._nodeTraverser().moveLeft();
     } else if (event.key === 'l') {
-      this.nodeTraverser?.moveRight();
+      this._nodeTraverser().moveRight();
     }
-    const maybeNewNode = this?.nodeTraverser?.curr;
-    if (maybeNewNode?.id() != this.selectedNode?.renderID) {
-      this?.renderer?.onNodeSelect(notNull(maybeNewNode));
+    const maybeNewNodeId = this?._nodeTraverser().currNodeId();
+    if (maybeNewNodeId != this.selectedNode?.renderID) {
+      this?.renderer?.onNodeSelect(maybeNewNodeId);
     }
     return true;
   }
