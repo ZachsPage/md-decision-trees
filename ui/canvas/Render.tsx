@@ -1,6 +1,6 @@
 import {Node} from "./CanvasElems"
 import {notNull} from "../Utils"
-import {useCallback, useState, useMemo, useRef} from 'react';
+import {useCallback, useState, useMemo, useRef, useEffect} from 'react';
 import dagre from 'dagre';
 import ReactFlow, { 
   Node as FlowNode,
@@ -16,6 +16,8 @@ import ReactFlow, {
   Position,
   useReactFlow,
   ReactFlowProvider,
+  ConnectionMode,
+  EdgeProps,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './Canvas.css';
@@ -133,6 +135,7 @@ export class Renderer {
         source: parentNodeID,
         target: childNodeID,
         id: `e${parentNodeID}-${childNodeID}`,
+        type: edgeType, // Use the registered edge type
         style: {
           stroke: `var(--edge-${edgeType}-color)`,
           strokeWidth: 3
@@ -282,26 +285,59 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   );
 }
 
+// Custom edge component for rendering different edge types
+const CustomEdgeComp = ({ sourceX, sourceY, targetX, targetY, type = 'default' }: EdgeProps & { type?: 'pro' | 'con' | 'default' }): JSX.Element => {
+  // Determine the edge color based on the type
+  const edgeColor = type === 'pro' 
+    ? 'var(--edge-pro-color)' 
+    : type === 'con' 
+      ? 'var(--edge-con-color)' 
+      : 'var(--edge-default-color)';
+  
+  return (
+    <path
+      d={`M ${sourceX} ${sourceY} C ${sourceX} ${(sourceY + targetY) / 2}, ${targetX} ${(sourceY + targetY) / 2}, ${targetX} ${targetY}`}
+      style={{
+        fill: 'none',
+        stroke: edgeColor,
+        strokeWidth: 3,
+      }}
+    />
+  );
+};
+
 // Inner component that uses ReactFlow hooks
 const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element => {
+  const { getNode } = useReactFlow();
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
+  // Custom node / edge types
   const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
-  const [contextMenu, setContextMenu] = useState<{
-    show: boolean;
-    x: number;
-    y: number;
-    nodeId: string;
-    nodeType: string;
-  }>({
+  const edgeTypes = useMemo(() => ({
+    pro: (props: EdgeProps) => <CustomEdgeComp {...props} type="pro" />,
+    con: (props: EdgeProps) => <CustomEdgeComp {...props} type="con" />,
+    default: (props: EdgeProps) => <CustomEdgeComp {...props} type="default" />,
+  }), []);
+  // State for the context menu
+  const defaultContextMenuState = {
     show: false,
     x: 0,
     y: 0,
     nodeId: '',
     nodeType: '',
-  });
-  const { project } = useReactFlow();
-
+  };
+  const [contextMenu, setContextMenu] = useState(defaultContextMenuState);
+  // State for edge creation 
+  const defaultEdgeCreationState = {
+    active: false,
+    sourceNodeId: '',
+    sourceNodeType: '',
+    targetType: 'pro' as 'pro' | 'con',
+    mousePosition: null as { x: number, y: number } | null,
+  };
+  const [edgeCreation, setEdgeCreation] = useState(defaultEdgeCreationState);
+  
   // Update initialNodes to include the text change handler
   const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string): void => {
     setNodes((changedNodes) => changedNodes?.map((node) => {
@@ -340,6 +376,7 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     if (nodeType === 'pro' || nodeType === 'con') {
       // Use the client coordinates directly instead of projecting
       setContextMenu({
+        ...defaultContextMenuState,
         show: true,
         x: event.clientX,
         y: event.clientY,
@@ -350,46 +387,157 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   }, []);
 
   const onPaneClick = useCallback(() => {
-    setContextMenu({ ...contextMenu, show: false });
+    setContextMenu(defaultContextMenuState);
+    
+    // If we're in edge creation mode and clicked on the pane (not a node), cancel the operation
+    if (edgeCreation.active) {
+      setEdgeCreation({...edgeCreation, active: false, mousePosition: null});
+    }
+  }, [contextMenu, edgeCreation]);
+
+  // Handle escape key to cancel edge creation
+  const onKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape' && edgeCreation.active) {
+      setEdgeCreation({...edgeCreation, active: false, mousePosition: null});
+    }
+  }, [edgeCreation]);
+
+  // Add and remove event listeners
+  useEffect(() => {
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [onKeyDown]);
+
+  // Track mouse movement for edge creation
+  const onMouseMove = useCallback((event: React.MouseEvent) => {
+    if (edgeCreation.active && reactFlowWrapper.current) {
+      // Get the position of the mouse relative to the ReactFlow container
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+      
+      // Store the raw mouse position
+      setEdgeCreation(prev => ({...prev, mousePosition: { x, y }}));
+    }
+  }, [edgeCreation]);
+
+  // Combined function for handling both Pro and Con relationships
+  const handleMakeRelationFor = useCallback((targetType: 'pro' | 'con') => {
+    // Start edge creation mode
+    setEdgeCreation({
+      ...defaultEdgeCreationState,
+      active: true,
+      sourceNodeId: contextMenu.nodeId,
+      sourceNodeType: contextMenu.nodeType,
+      targetType: targetType,
+    });
+    
+    // Close the context menu
+    setContextMenu(defaultContextMenuState);
   }, [contextMenu]);
 
+  // Wrapper functions for the specific relationship types
   const handleMakeProFor = useCallback(() => {
-    // This will be implemented in the next step
-    console.log('Make Pro for...', contextMenu.nodeId);
-    setContextMenu({ ...contextMenu, show: false });
-  }, [contextMenu]);
+    handleMakeRelationFor('pro');
+  }, [handleMakeRelationFor]);
 
   const handleMakeConFor = useCallback(() => {
-    // This will be implemented in the next step
-    console.log('Make Con for...', contextMenu.nodeId);
-    setContextMenu({ ...contextMenu, show: false });
-  }, [contextMenu]);
+    handleMakeRelationFor('con');
+  }, [handleMakeRelationFor]);
+
+  // Handle node click to complete edge creation
+  const onNodeClick = useCallback((event: React.MouseEvent, node: FlowNode) => {
+    if (edgeCreation.active) {
+      // Add the new edge
+      const newEdge = {
+        source: edgeCreation.sourceNodeId,
+        target: node.id,
+        id: `e${edgeCreation.sourceNodeId}-${node.id}`,
+        type: edgeCreation.targetType, // Set the edge type based on the relationship type
+        style: {
+          stroke: `var(--edge-${edgeCreation.targetType}-color)`,
+          strokeWidth: 3
+        }
+      };
+      setEdges((eds) => [...eds, newEdge]);
+      setEdgeCreation(defaultEdgeCreationState);
+      event.stopPropagation(); //< Prevent the default node click behavior
+    }
+  }, [edgeCreation, setEdges]);
+
+  // Render the temporary edge
+  const renderTemporaryEdge = () => {
+    if (!edgeCreation.active || !edgeCreation.mousePosition) return null;
+    // Get the handle position
+    const sourceNode = notNull(getNode(edgeCreation.sourceNodeId));
+    const nodeElement = notNull(document.getElementById(`custom-node-${sourceNode.id}`));
+    const handleElement = notNull(nodeElement.querySelector('.react-flow__handle-bottom'));
+    const handleRect = handleElement.getBoundingClientRect();
+    const bounds = reactFlowWrapper.current?.getBoundingClientRect();
+    if (!bounds) return null;
+    // Get the toolbar widths for offset calculation 
+    const leftToolbarElement = document.getElementById('left-toolbar');
+    const leftToolbarWidth = leftToolbarElement ? leftToolbarElement.offsetWidth : 0;
+    const topToolbarElement = document.getElementById('top-toolbar');
+    const topToolbarHeight = topToolbarElement ? topToolbarElement.offsetHeight : 0;
+    // Calculate positions relative to the ReactFlow container, accounting for both toolbars
+    const sourceX = handleRect.left - bounds.left + leftToolbarWidth;
+    const sourceY = handleRect.top - bounds.top + topToolbarHeight;
+    const targetX = edgeCreation.mousePosition.x + leftToolbarWidth;
+    const targetY = edgeCreation.mousePosition.y + topToolbarHeight;
+    return (
+      <svg
+        style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10}}
+      >
+        <path
+          d={`M ${sourceX} ${sourceY} C ${sourceX} ${(sourceY + targetY) / 2}, ${targetX} ${(sourceY + targetY) / 2}, ${targetX} ${targetY}`}
+          style={{
+            fill: 'none',
+            stroke: `var(--edge-${edgeCreation.targetType}-color)`,
+            strokeWidth: 3,
+            strokeDasharray: '5,5',
+          }}
+        />
+      </svg>
+    );
+  };
+
 
   return (
-    <>
+    <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
       <ReactFlow fitView defaultEdgeOptions={{animated: false}}
         nodes={nodesWithHandlers} edges={edges}
         onNodesChange={onNodesChange}
         nodeTypes={nodeTypes} 
+        edgeTypes={edgeTypes}
         zoomOnDoubleClick={false}
         onNodeContextMenu={onNodeContextMenu}
         onPaneClick={onPaneClick}
+        onNodeClick={onNodeClick}
+        onMouseMove={onMouseMove}
+        connectionMode={ConnectionMode.Loose}
+        nodesConnectable={false}
+        connectOnClick={false}
       >
         <Background />
         <Controls />
       </ReactFlow>
+      
+      {renderTemporaryEdge()}
       
       {contextMenu.show && (
         <NodeContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
           nodeType={contextMenu.nodeType}
-          onClose={() => setContextMenu({ ...contextMenu, show: false })}
+          onClose={() => setContextMenu(defaultContextMenuState)}
           onMakeProFor={handleMakeProFor}
           onMakeConFor={handleMakeConFor}
         />
       )}
-    </>
+    </div>
   );
 };
 
