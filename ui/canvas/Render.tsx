@@ -76,7 +76,7 @@ export class Renderer {
     return newNodeID;
   }
 
-  removeNode(renderID: NodeId) {
+  removeNode(renderID: NodeId): void {
     const nodesToRemove: NodeId[] = new DFS([renderID], this).visitedNodes
     let parentToSelectId: NodeId | null = this.nodes.find(node => node.id === nodesToRemove[0])?.data.dataNode.parent_idxs[0];
     parentToSelectId = parentToSelectId ? parentToSelectId : "0";
@@ -97,7 +97,7 @@ export class Renderer {
   }
 
   // Render functions
-  renderNodes(nodes : fromRust.Nodes) {
+  renderNodes(nodes : fromRust.Nodes): void {
     this._setUpGraph();
     this.nodes = [];
     this.edges = [];
@@ -117,8 +117,8 @@ export class Renderer {
         label: newNode.text,
         dataNode: newNode,
       },
-      rank: this._getRank(newNode.type_is),
-      style: this._getNodesStyle(newNode.type_is),
+      rank: this._getRank(notNull(newNode.type_is)),
+      style: this._getNodesStyle(notNull(newNode.type_is)),
       position: { x: 0, y: 0 },
       type: 'customNodeComp', // Must align with field name in nodeTypes
     }
@@ -130,19 +130,19 @@ export class Renderer {
         source: parentNodeID,
         target: childNodeID,
         id: `e${parentNodeID}-${childNodeID}`,
-        style: this._getEdgeStyle(newNode.type_is),
+        style: this._getEdgeStyle(notNull(newNode.type_is)),
       });
     });
     return newCanvasNode.id;
   }
 
   // TODO: move to css
-  _getNodesStyle(node_type: any) {
-    return {'background': getNodeColor(node_type), 'color': '#000000', 'border': '2px solid #000000'};
+  _getNodesStyle(nodeType: fromRust.NodeType): React.CSSProperties {
+    return {'background': getNodeColor(nodeType), 'color': '#000000', 'border': '2px solid #000000'};
   }
 
   // TODO: move to css
-  _getEdgeStyle(relationship: any) {
+  _getEdgeStyle(relationship: fromRust.NodeType): React.CSSProperties {
     switch (relationship) {
         case 'Pro': return {stroke: '#90EE90', strokeWidth: 3};
         case 'Con': return {stroke: '#FFB6B6', strokeWidth: 3};
@@ -150,8 +150,8 @@ export class Renderer {
     }
   };
 
-  _getRank(node_type: any) {
-    switch (node_type) { 
+  _getRank(nodeType: fromRust.NodeType): number {
+    switch (nodeType) { 
       case 'Decision': return 0;
       case 'Option': return 1;
       case 'Pro': return 2;
@@ -161,7 +161,7 @@ export class Renderer {
     }
   }
 
-  doLayout() {
+  doLayout(): void {
     this.nodes.forEach(node => { 
       // TODO: This works okay but not great - may need to switch to a different layout library like elkjs
       const textDim = getTextDimensions(node.data.label, 50, 190);
@@ -184,8 +184,8 @@ export class Renderer {
   nextNodeID: number = 0;
   nodes: FlowNode[] = [];
   edges: FlowEdge[] = [];
-  renderGraph: any | null = null;
-  doubleClickNode: any = null;
+  renderGraph: ((nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void) | null = null;
+  doubleClickNode: ((nodeId: NodeId) => void) | null = null;
   nodeBeingEdited: Element | null = null;
 
   // Init
@@ -195,21 +195,27 @@ export class Renderer {
     this.doLayout();
   }
 
-  _setUpGraph() {
+  _setUpGraph(): void {
     this.graph.setDefaultEdgeLabel(() => ({}));
     this.graph.setGraph({rankdir: "TB", ranksep: 100, nodesep: 200});
   }
 
-  setRenderGraphFcn(renderGraph: any) { this.renderGraph = renderGraph; }
-  setDoubleClickNodeFcn(doubleClickNode: any) { this.doubleClickNode = doubleClickNode; }
-  _rerenderNodes(cb: any | null = null) {
+  setRenderGraphFcn(renderGraph: (nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void): void { 
+    this.renderGraph = renderGraph; 
+  }
+  
+  setDoubleClickNodeFcn(doubleClickNode: (nodeId: NodeId) => void): void { 
+    this.doubleClickNode = doubleClickNode; 
+  }
+  
+  _rerenderNodes(cb: (() => void) | null = null): void {
     if (this.renderGraph) {
-      this.renderGraph(this.nodes, this.edges, cb);
+      this.renderGraph(this.nodes, this.edges, cb || undefined);
     }
   }
 
   // User interaction functions
-  onNodeSelect(selectedNodeId: NodeId | null, cb: any | null = null) {
+  onNodeSelect(selectedNodeId: NodeId | null, cb: (() => void) | null = null): void {
     // Give user the nodes render attributes to allow drawing over it & the unwrapped node
     let selectedNode = null as SelectedNode | null;
     this.nodes.forEach(node => { 
@@ -226,7 +232,7 @@ export class Renderer {
     this._rerenderNodes(cb);
   }
 
-  isEditingNode() { 
+  isEditingNode(): boolean { 
     if (this.nodeBeingEdited !== null) { // Refocus the text box due to bug with focus on create
       document.getElementById(`${this.nodeBeingEdited?.id}-text`)?.focus();
       return true;
@@ -234,14 +240,14 @@ export class Renderer {
     return false;
   }
 
-  onNodeEdit(nodeID: NodeId) {
+  onNodeEdit(nodeID: NodeId): void {
     const nodeToEdit = notNull(document.getElementById(`custom-node-${nodeID}`)) as HTMLElement
     this.nodeBeingEdited = nodeToEdit;
     this.nodeBeingEdited.dispatchEvent(new MouseEvent("dblclick", {bubbles: true, cancelable: false}));
     document.getElementById(`custom-node-${nodeID}-text`)?.focus();
   }
 
-  onNodeEditFinish() {
+  onNodeEditFinish(): void {
     if (this.isEditingNode()) {
       this.nodeBeingEdited?.dispatchEvent(new KeyboardEvent("keydown", {key: "e", bubbles: true, cancelable: true}));
       this.nodeBeingEdited = null;
@@ -249,7 +255,7 @@ export class Renderer {
   }
 };
 
-function CustomNodeComp({ data, id }: NodeProps) {
+function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   const htmlRef = useRef(null); //< Used to focus / auto-size the text area
   const nodeElementId = `custom-node-${id}`; //< Used to mock click the element to edit
   const nodeElementTextBoxId = `custom-node-${id}-text`; //< Use to externally focus on create due to bug
@@ -290,13 +296,13 @@ function CustomNodeComp({ data, id }: NodeProps) {
   );
 }
 
-export const RendererComp = (({renderer}: {renderer: Renderer}) => {
+export const RendererComp = (({renderer}: {renderer: Renderer}): JSX.Element => {
     const [nodes, setNodes] = useNodesState([]);
     const [edges, setEdges] = useEdgesState([]);
     const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
 
     // Update initialNodes to include the text change handler
-    const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string) => {
+    const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string): void => {
       setNodes((changedNodes) => changedNodes?.map((node) => {
         if (node.id === changedNodeId) {
           node.data.label = newText;
@@ -307,11 +313,11 @@ export const RendererComp = (({renderer}: {renderer: Renderer}) => {
     }, [setNodes]);
     const nodesWithHandlers = nodes?.map(node => {node.data.onTextChange = onNodeTextChange; return node;});
 
-    const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const onNodesChange = useCallback((changes: NodeChange[]): void => {
       setNodes((changedNodes) => applyNodeChanges(changes, changedNodes));
     }, [setNodes]);
     
-    renderer.setRenderGraphFcn( async (tmpNodes: any, tmpEdges: any, renderedCB: any) => { 
+    renderer.setRenderGraphFcn( async (tmpNodes: FlowNode[], tmpEdges: FlowEdge[], renderedCB: (() => void) | undefined): Promise<void> => { 
       setNodes([...tmpNodes]); 
       setEdges([...tmpEdges]); // Copy to force re-render, or new edges from createNode wont show up
       if (renderedCB) { // Waits for re-render to finish before calling the callback

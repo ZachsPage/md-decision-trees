@@ -4,6 +4,8 @@ import { notNull } from "../../Utils"
 import { errorStore } from "../../stores/ErrorStore"
 import * as fromRust from "../../bindings/bindings"
 
+type NodeType = fromRust.NodeType;
+
 enum State {
   None,
   ReadyToMake
@@ -29,14 +31,17 @@ export class NodeCreator {
       }
     } else if (this.state == State.ReadyToMake) {
       this.state = State.None;
-      this.makeNodeOnSelected(this.getNodeTypeStringFromPressedKey(event.key));
+      let optNodeType = this.getNodeTypeStringFromPressedKey(event.key);
+      if (optNodeType) {
+        this.makeNodeOnSelected(optNodeType);
+      }
       event.preventDefault(); //< Stops key from entering node text on creation & changing node size
       return true;
     }
     return false;
   }
 
-  makeNodeOnSelected(type: String | null ) {
+  makeNodeOnSelected(type: NodeType) {
     if (!type) { return; }
     let optParentNode = this?.canvas?.getSelectedNode();
     let optParentNodeType = optParentNode?.node.type_is;
@@ -46,11 +51,11 @@ export class NodeCreator {
       return;
     }
     let renderer = notNull(this.render);
-    let newNodeId = notNull(renderer.createNode(type as fromRust.NodeType, optParentNode));
+    let newNodeId = notNull(renderer.createNode(type as NodeType, optParentNode));
     renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode());
   }
 
-  getNodeTypeStringFromPressedKey(key: String): String | null {
+  getNodeTypeStringFromPressedKey(key: String): NodeType | null {
     if (key === 'd') { return "Decision";
     } else if (key === 'o') { return "Option";
     } else if (key === 'p') { return "Pro";
@@ -60,7 +65,7 @@ export class NodeCreator {
     return null;
   }
 
-  canMakeTypeOnParent(parentType: String | undefined | null, newType: String): Boolean {
+  canMakeTypeOnParent(parentType: NodeType | null | undefined, newType: NodeType): Boolean {
     if (newType == "Note") { return true; }
     if (!parentType) { return newType == "Decision"; }
     if (parentType == "Decision") { return newType == "Option"; }

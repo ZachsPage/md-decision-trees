@@ -21,7 +21,7 @@ export class NodeSelector {
     this.renderer = renderer;
   }
 
-  setSelectedNode(newNode: SelectedNode | null) { 
+  setSelectedNode(newNode: SelectedNode | null): void { 
     this.selectedNode = newNode;
     if (!newNode) {
       this._nodeTraverser()?.clear();
@@ -32,7 +32,7 @@ export class NodeSelector {
     return this.selectedNode; 
   }
 
-  _nodeTraverser() : NodeTraverseSelection {
+  _nodeTraverser(): NodeTraverseSelection {
     return notNull(this.renderer).getNodeTraverser(this.selectedNode);
   }
 
@@ -51,7 +51,7 @@ export class NodeSelector {
     } else if (event.key === 'l') {
       this._nodeTraverser().moveRight();
     }
-    const maybeNewNodeId = this?._nodeTraverser().node()?.id;
+    const maybeNewNodeId = this?._nodeTraverser().currNodeId();
     if (maybeNewNodeId != this.selectedNode?.renderID) {
       this?.renderer?.onNodeSelect(maybeNewNodeId);
     }

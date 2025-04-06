@@ -15,6 +15,7 @@ Run test & see prints - `(cd src-tauri/ && cargo test -- --nocapture)`
 `pnpm tauri dev` - runs the app
 * To see `console.logs` - RightClick -> Inspect Element - Console
 `pnpm tauri build` - bundling
+* This also checks for Typescript errors - or can just run `npx tsc --noEmit`
 `pnpm add / remove <package>`
 
 ## Project Roadmap

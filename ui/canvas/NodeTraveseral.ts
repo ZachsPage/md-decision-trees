@@ -1,34 +1,51 @@
 import {Renderer, NodeId} from "./Render"
 import {notNull} from "../Utils"
+import * as dagre from 'dagre';
 
-function getRootNodeIDs(graph: any): NodeId[] {
-  return graph.filterNodes((nodeId: NodeId) => { return graph.predecessors(nodeId).length == 0; }).nodes()  
+// Helper function to safely get node IDs from graph operations
+// - Seems like dagre node type doesnt have ".id", but it does?
+function getNodeIds(nodes: any[] | undefined): NodeId[] {
+  if (!nodes) return [];
+  if (nodes.length > 0 && typeof nodes[0] === 'string') {
+    return nodes as NodeId[];
+  }
+  return nodes.map(node => node.id || node.v || '') as NodeId[];
 }
+
+function getRootNodeIDs(graph: dagre.graphlib.Graph): NodeId[] {
+  const nodes = graph.filterNodes((nodeId: string) => graph.predecessors(nodeId)?.length === 0);
+  return getNodeIds(nodes?.nodes());
+}
+
 // Had to make this since couldn't figure out why the built-in dfs was going top / right / left
 export class DFS {
   visitedNodes: NodeId[] = []
-  graph: any | null = null
+  graph: dagre.graphlib.Graph | null = null
   constructor(rootNodes: NodeId[], renderer: Renderer) {
     this.graph = renderer?.graph
-    if (rootNodes.length == 0) { 
+    if (rootNodes.length == 0 && this.graph) { 
       rootNodes = getRootNodeIDs(this.graph)  
     }
     rootNodes.forEach((nodeID: NodeId) => this.continueDFS(nodeID));
   }
   continueDFS(currNodeId: NodeId) {
     this.visitedNodes.push(currNodeId);
-    this.graph.successors(currNodeId).forEach((childId: any) => {
-      if (this.visitedNodes.indexOf(childId) === -1) {
-        this.continueDFS(childId);
-      }
-    });
+    if (this.graph) {
+      const successors = this.graph.successors(currNodeId);
+      const successorIds = getNodeIds(successors);
+      successorIds.forEach(childId => {
+        if (this.visitedNodes.indexOf(childId) === -1) {
+          this.continueDFS(childId);
+        }
+      });
+    }
   }
 };
 
 // Keeps a window of nodes that allows switching the "currently selected node"  
 export class NodeTraverseSelection {
   renderer?: Renderer;
-  curr: NodeId;
+  curr: NodeId | null;
   firstParent: NodeId | null = null
   rightSibs: NodeId[] = []
   leftSibs: NodeId[] = []
@@ -39,8 +56,12 @@ export class NodeTraverseSelection {
     this.populateFrom(this.curr);
   }
 
-  node() {
-    return this._graph().node(this.curr);
+  _graph(): dagre.graphlib.Graph | undefined {
+    return this.renderer?.graph;
+  }
+
+  currNodeId() : NodeId | null {
+    return this.curr;
   }
 
   clear() { 
@@ -48,9 +69,12 @@ export class NodeTraverseSelection {
   }
 
   moveDown() {
-    const children = this.renderer?.graph.successors(this.curr);
-    if (children && children.length > 0) {
-      this.populateFrom(children[0]);
+    const graph = this._graph();
+    if (!graph || !this.curr) return;
+    
+    const childrenIds = getNodeIds(graph.successors(this.curr));
+    if (childrenIds.length > 0) {
+      this.populateFrom(childrenIds[0]);
     }
   }
 
@@ -69,21 +93,31 @@ export class NodeTraverseSelection {
   }
  
   // Populates member variables starting from startingNode to be used for switching which node is selected
-  populateFrom(startingNodeId: any | null) {
+  populateFrom(startingNodeId: NodeId | null) {
     if (!startingNodeId || startingNodeId.length == 0) { return; }
+    
+    const graph = this._graph();
+    if (!graph) return;
+    
     this.clear();
     this.curr = startingNodeId;
-    const parents = this._graph().predecessors(this.curr)
-    this.firstParent = (parents && parents.indexOf(this.curr) === -1) ? parents[0] : null;
+    
+    const parents = graph.predecessors(this.curr);
+    const parentIds = getNodeIds(parents);
+    this.firstParent = (parentIds.length > 0 && parentIds.indexOf(this.curr) === -1) ? parentIds[0] : null;
+    
     // Get the siblings - handle if its a root or if it has actual siblings
-    let sibIds = this.firstParent ? this._graph().successors(this.firstParent) : getRootNodeIDs(this._graph());
+    let sibIds: NodeId[] = [];
+    if (this.firstParent) {
+      const siblings = graph.successors(this.firstParent);
+      sibIds = getNodeIds(siblings);
+    } else {
+      sibIds = getRootNodeIDs(graph);
+    }
+    
     // Separate the siblings between left and right
-    const splitIdx = sibIds.indexOf(this.curr)
-    this.leftSibs = sibIds.slice(0, splitIdx).reverse()
-    this.rightSibs = sibIds.slice(splitIdx + 1)
-  }
-
-  _graph() {
-    return this.renderer?.graph;
+    const splitIdx = sibIds.indexOf(this.curr);
+    this.leftSibs = sibIds.slice(0, splitIdx).reverse();
+    this.rightSibs = sibIds.slice(splitIdx + 1);
   }
 }
