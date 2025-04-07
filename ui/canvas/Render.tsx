@@ -74,7 +74,8 @@ export class Renderer {
       file_order: 0, //< Doesnt matter - will be populated correctly in getNodes
       level: parent ? parent.node.level + 1 : 0,
       parent_idxs: [], //< Doesnt matter - not used when sending nodes back - using parentID instead for renderNode
-      type_is: type
+      type_is: type,
+      parent_idxs_diff_type: [] //< TODO
     };
     let newNodeID = this.renderNode(newNode, parent ? [parent.renderID] : []);
     this.doLayout();

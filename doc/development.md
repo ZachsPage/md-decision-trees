@@ -52,8 +52,8 @@ Here is a list of in order milestones to guide this project:
 ### Additions
 * Update to use `reactflow` instead of `cytoscape` - done
 * Add comparative node feature:
-  * Add a right / context click menu for nodes - buld should only appear if the node is a Pro or Con
-    * Make the menu show "Add relationship..." - when hovering over "Make relationship...", a sub-menu should extend to the right, and show two options: "Make Pro for..." or "Make Con for..."
+  * Add a right / context click menu for nodes - but should only appear if the node is a Pro or Con
+    * Make the menu show "Add relationship..." - when hovering over "Add relationship...", a sub-menu should extend to the right, and show two options: "Make Pro for..." or "Make Con for..."
   * When "Make Pro / Con for..." is clicked:
     * For the UI:
       * Close the menu, and create an edge with one end connected to the selected node, and the other end connected to the users mouse - which moves when the mouse moves
@@ -78,14 +78,12 @@ Here is a list of in order milestones to guide this project:
           * Style this as a `node-comparative` - which the node color should be a diagonal line splitting the pro / con colors (red / green)
           * Each new edge drawn from that node should be red or green - depending on if the node is a pro / con for its connecting node
     * Now using the previous menu changes we did to make these new connections:
-      * When a `Pro` is used to "Make a Pro for...", add the target nodes index to `parent_idxs` - if used for "Make a Con for...", then add the target nodes index to `parent_idxs_diff_type`
-      * Same for `Cons` but vice versa
-* Support ProCons like `PC-P1-C2` - this approach allows a single attribute to be a Pro for 1 or more options, but a Con for other
-  * Support context menu for nodes - show "Make Pro For..." & "Make Con For..."
-    * Was thinking "Break Pro/Con For...", but this will be covered with `undo` support
-  * Allow user to click, then draw another line to that node - green for `Pro`, red for `Con`
-  * Encode the right clicked node as `PC`, take original node as `-P<Option ID>`, and new node as `-<P/C><Option ID>`
-    * Need to revist ID's for this - think its just `file_order`, though updating would be a concern later
+      * When a `Pro` is used to "Make a Pro for...", add the target nodes index to `parent_idxs` - if used for "Make a Con for...", then add the target nodes index to `parent_idxs_diff_type`. Start with Pros then do Cons as well.
+        * This can be done in 1 of 2 approach - but open to other approaches as well:
+          * 1: Do this on node connection - if it is a new connection of the same type, add it to `parent_idxs` - if a different type of connection than node type, add it to `parent_idxs_diff_type`
+            * This approach will likely get tricky for when nodes are added or removed - so maybe go with the next option?
+        * 2. Populate these fields while doing DFS in `ui/canvas/NodeTraveseral.ts : DFS`:
+          * If it has more than 1 connection, then populate `parent_idx` & `parent_idxs_diff_type`
 * Side menu to show hot-key / color coding help
 * Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
 * Update from TauriV1 to TauriV2
