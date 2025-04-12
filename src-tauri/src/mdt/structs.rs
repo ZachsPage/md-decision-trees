@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 // TODO - may be able to leverage complex enums to do a combo Pro Con tracing to multiple nodes?
-#[derive(Serialize, Deserialize, Type, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Type, Copy, Clone, PartialEq, Debug)]
 pub enum NodeType { 
   Decision, Option,
   Pro, Con,

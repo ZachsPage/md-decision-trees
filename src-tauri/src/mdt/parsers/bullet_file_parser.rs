@@ -10,6 +10,7 @@ use std::str::FromStr;
 // For non-const statics
 lazy_static! {
   pub static ref START_NODE_BEGIN_REGEX: Regex = Regex::new(r"\s*\* ").unwrap();
+  pub static ref COMPARATIVE_NODE_REGEX: Regex = Regex::new(r"^([P|C]),(\d+(?:,\d+)*)(?:-([P|C]),(\d+(?:,\d+)*))?$").unwrap();
 }
 
 /// Last node read that may be a parent to the current node
@@ -23,7 +24,7 @@ pub struct BulletFileParser
   file_order_cnt : u32,
   prev_parsed_text: Option<String>,
   parent_q: VecDeque<PotentialParent>,
-  force_node_type: bool
+  force_node_type: bool,
 }
 
 /// Parses file with bullet points into node children
@@ -61,6 +62,12 @@ impl BulletFileParser {
     if let Some((node_type, new_text)) = self.split_node_type_from_string(&text) {
       new_node.type_is = Some(node_type);
       new_node.text = new_text;
+      if node_type == NodeType::Pro || node_type == NodeType::Con {
+        if let Some((same_type_idxs, diff_type_idxs)) = self.parse_comparative_parent_idxs(&text) {
+          new_node.parent_idxs = same_type_idxs;
+          new_node.parent_idxs_diff_type = diff_type_idxs;
+        }
+      }
     } else {
       new_node.text = text.to_string();
     }
@@ -69,7 +76,10 @@ impl BulletFileParser {
     while !self.parent_q.is_empty() {
       if let Some(ref pot_parent) = self.parent_q.back() {
         if pot_parent.level < new_node.level {
-          new_node.parent_idxs.push(pot_parent.idx);
+          // Only add to parent_idxs if we didn't already set it from comparative parsing
+          if new_node.parent_idxs.is_empty() {
+            new_node.parent_idxs.push(pot_parent.idx);
+          }
           self.add_curr_as_pot_parent(new_node.level);
           break;
         } else {
@@ -88,7 +98,16 @@ impl BulletFileParser {
   /// TODO - skip this string copy and just make text mut
   fn split_node_type_from_string(&mut self, text: &str) -> Option<(NodeType, String)> {
     if let Some(first_colon_idx) = text.find(":") {
-      if let Ok(node_type) = NodeType::from_str(&text[..first_colon_idx]) {
+      let type_str = &text[..first_colon_idx];
+      if let Some(caps) = COMPARATIVE_NODE_REGEX.captures(type_str) {
+        let node_type_char = caps.get(1).unwrap().as_str(); //< Single letter type
+        let node_type = if node_type_char == "P" { NodeType::Pro } else { NodeType::Con };
+        let colon_and_space_size = 2;
+        let new_text = text[first_colon_idx+colon_and_space_size..].to_string();
+        self.force_node_type = true;
+        return Some((node_type, new_text));
+      }
+      if let Ok(node_type) = NodeType::from_str(type_str) {
         self.force_node_type = true;
         // TODO - make this more robust
         let colon_and_space_size = 2;
@@ -100,7 +119,30 @@ impl BulletFileParser {
     }
     return None;
   }
-
+  
+  /// Parse comparative parent indexes from a node text
+  /// Returns (same_type_parent_idxs, diff_type_parent_idxs) if the node is comparative
+  fn parse_comparative_parent_idxs(&self, text: &str) -> Option<(Vec<u32>, Vec<u32>)> {
+    if let Some(first_colon_idx) = text.find(":") {
+      let type_str = &text[..first_colon_idx];
+      if let Some(caps) = COMPARATIVE_NODE_REGEX.captures(type_str) {
+        // Helper function to parse comma-separated indexes
+        let parse_indexes = |s: &str| -> Vec<u32> {
+          s.split(',')
+            .filter_map(|s| s.parse::<u32>().ok())
+            .collect()
+        };
+        let same_type_parent_idxs = caps.get(2)
+          .map(|m| parse_indexes(m.as_str()))
+          .unwrap_or_default();
+        let diff_type_parent_idxs = caps.get(4)
+          .map(|m| parse_indexes(m.as_str()))
+          .unwrap_or_default();
+        return Some((same_type_parent_idxs, diff_type_parent_idxs));
+      }
+    }
+    None
+  }
 }
 
 #[cfg(test)]
@@ -165,11 +207,60 @@ mod tests {
     }
   }
 
-    #[test]
+  #[test]
   fn test_encoded_parsing() {
     let node_res = parse_file(DATA_DIR.join("03_basic_encoding.md"));
     assert!(node_res.is_ok());
   }
-}
 
+  #[test]
+  fn test_parse_comparative_parent_idxs() {
+    let parser = BulletFileParser::new();
+
+    let assert_parents_are = |text: &str, same_type: Vec<u32>, diff_type: Vec<u32>| {
+        let result = parser.parse_comparative_parent_idxs(text);
+        assert!(result.is_some());
+        let (same_type_res, diff_type_res) = result.unwrap();
+        assert_eq!(same_type_res, same_type);
+        assert_eq!(diff_type_res, diff_type);
+    };
+
+    assert_parents_are("P,1: Pro for Option 1", vec![1], vec![]);
+    assert_parents_are("P,1,2,3: Pro for Options 1, 2, and 3", vec![1, 2, 3], vec![]);
+    assert_parents_are("P,1-C,2,3: Pro for Option 1, Con for Options 2 and 3", vec![1], vec![2, 3]);
+    assert_parents_are("C,1-P,2,3: Con for Option 1, Pro for Options 2 and 3", vec![1], vec![2, 3]);
+
+    // Test failure cases - non comparative, and without a colon
+    assert!(parser.parse_comparative_parent_idxs("P: Pro for Option").is_none());
+    assert!(parser.parse_comparative_parent_idxs("P,1-C,2").is_none());
+  }
+  
+  #[test]
+  fn test_comparative_encoding_parsing() {
+    let node_res = parse_file(DATA_DIR.join("05_comparative_encoding_output.md"));
+    assert!(node_res.is_ok());
+    if let Ok(nodes) = node_res {
+      // Find the comparative node
+      let comparative_node = nodes.nodes.iter()
+        .find(|node| node.parent_idxs_diff_type.len() > 0)
+        .expect("No comparative node found");
+      
+      // Verify it's a Pro node that is also a Con for other nodes
+      assert_eq!(comparative_node.type_is, Some(NodeType::Pro));
+      assert!(!comparative_node.parent_idxs.is_empty());
+      assert!(!comparative_node.parent_idxs_diff_type.is_empty());
+      assert!(comparative_node.text.contains("Pro for Option 2, Con for Options 1 and 3"));
+      
+      // Get the 3 option nodes to use their file_order indexs
+      let option_nodes: Vec<&Node> = nodes.nodes.iter().filter(|node| node.type_is == Some(NodeType::Option)).collect();
+      assert_eq!(option_nodes.len(), 3);
+      let option1 = option_nodes.iter().find(|node| node.text == "Option 1").expect("Option 1 not found");
+      let option2 = option_nodes.iter().find(|node| node.text == "Option 2").expect("Option 2 not found");
+      let option3 = option_nodes.iter().find(|node| node.text == "Option 3").expect("Option 3 not found");
+      // Verify the comparative node's relationships
+      assert_eq!(comparative_node.parent_idxs, vec![option2.file_order]);
+      assert_eq!(comparative_node.parent_idxs_diff_type, vec![option1.file_order, option3.file_order]);
+    }
+  }
+}
 }
