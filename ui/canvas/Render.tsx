@@ -246,6 +246,9 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   const nodeElementTextBoxId = `custom-node-${id}-text`; //< Use to externally focus on create due to bug
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.label);
+  
+  useEffect(() => { setText(data.label);}, [data.label]);
+  
   const handleDoubleClick = useCallback(async () => { 
     setIsEditing(true); 
     await new Promise(resolve => setTimeout(resolve));
