@@ -89,7 +89,7 @@ export class Canvas extends React.Component {
   }
 
   componentDidMount() {
-    const defaultFile = "TEST_FILE:03_basic_encoding.md";
+    const defaultFile = "TEST_FILE:05_comparative_encoding_output.md";
     canvasStore.setFilePath(defaultFile);
   }
 

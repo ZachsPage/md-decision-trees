@@ -77,7 +77,7 @@ export class Renderer {
       type_is: type,
       parent_idxs_diff_type: [] //< TODO
     };
-    let newNodeID = this.renderNode(newNode, parent ? [parent.renderID] : []);
+    let newNodeID = this.renderNode(newNode, parent ? [parent.renderID] : [], []);
     this.doLayout();
     return newNodeID;
   }
@@ -110,39 +110,45 @@ export class Renderer {
     this.nextNodeID = 0; //< Reset to align with parentIDs
     Node.newCollection(nodes.title);
     nodes.nodes.forEach((node: fromRust.Node) => { 
-      let parentIDs = node.parent_idxs.map(id => id.toString());
-      this.renderNode(node, parentIDs); 
+      const parentIDs = node.parent_idxs.map(id => id.toString());
+      const diffTypePars = node.parent_idxs_diff_type;
+      const diffTypeParentIDs = diffTypePars && diffTypePars.length > 0 ? diffTypePars.map(id => id.toString()) : [];
+      this.renderNode(node, parentIDs, diffTypeParentIDs); 
     });
     this.doLayout();
   }
 
-  renderNode(newNode: fromRust.Node, parentIDs: string[]): NodeId {
+  renderNode(newNode: fromRust.Node, parentIDs: string[], diffTypeParentIDs: string[]): NodeId {
     const newCanvasNode = {
       id: this.nextNodeID.toString(),
       data: { 
         label: newNode.text,
         dataNode: newNode,
       },
-      className: `node-${newNode.type_is?.toLowerCase()}`,
+      className: diffTypeParentIDs.length != 0 ? 'node-comparative' : `node-${newNode.type_is?.toLowerCase()}`,
       position: { x: 0, y: 0 },
       type: 'customNodeComp', // Must align with field name in nodeTypes
     }
     this.nodes.push(newCanvasNode);
     ++this.nextNodeID;
-    parentIDs.forEach((parentNodeID: NodeId) => { // Connect to each parent
-      const childNodeID = notNull(newCanvasNode.id);
-      const edgeType = newNode.type_is == "Pro" ? "pro" : newNode.type_is == "Con" ? "con" : "default"
+    const childNodeID = notNull(newCanvasNode.id);
+    const edgeType = newNode.type_is == "Pro" ? "pro" : newNode.type_is == "Con" ? "con" : "default"
+    const addNewEdge = (parentID: string, edgeType: string) => {
       this.edges.push({
-        source: parentNodeID,
+        source: parentID,
         target: childNodeID,
-        id: `e${parentNodeID}-${childNodeID}`,
-        type: edgeType, // Use the registered edge type
+        id: `e${parentID}-${childNodeID}`,
+        type: edgeType,
         style: {
           stroke: `var(--edge-${edgeType}-color)`,
           strokeWidth: 3
         }
       });
-    });
+    };
+    parentIDs.forEach(parentID => addNewEdge(parentID, edgeType));
+    if (edgeType != "default") {
+      diffTypeParentIDs.forEach(parentID => addNewEdge(parentID, edgeType == "pro" ? "con" : "pro"));
+    }
     return newCanvasNode.id;
   }
 
