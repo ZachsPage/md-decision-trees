@@ -26,6 +26,8 @@ import * as fromRust from "../bindings/bindings"
 import {SelectedNode} from "./key-handlers/NodeSelector"
 import {DFS, NodeTraverseSelection} from "./NodeTraveseral"
 import NodeContextMenu from '../components/NodeContextMenu';
+import { KeyboardHelp } from '../modals/KeyboardHelp';
+import { canvasStore } from "../stores/CanvasStore";
 
 // Triggered when a node is clicked
 type OnNodeClickCB = (selectedNode: SelectedNode) => void;
@@ -283,7 +285,7 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
     textElem?.setSelectionRange(textLen, textLen); //< Set cursor to end
   }, []);
   const handleKeyDown = useCallback((evt: React.KeyboardEvent) => {
-    if (evt.key === 'e' || evt.key === 'Escape') {
+    if ((evt.ctrlKey && evt.key === 'e') || evt.key === 'Escape') {
       setIsEditing(false);
       data.onTextChange(id, text); // Set in nodesWithHandlers
     }
@@ -565,6 +567,10 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
           onMakeProFor={handleMakeProFor}
           onMakeConFor={handleMakeConFor}
         />
+      )}
+
+      {canvasStore.showKeyboardHelp && (
+        <KeyboardHelp onClose={() => canvasStore.toggleKeyboardHelp()} />
       )}
     </div>
   );

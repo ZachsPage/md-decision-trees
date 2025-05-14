@@ -85,6 +85,11 @@ Here is a list of in order milestones to guide this project:
         * 2. Populate these fields while doing DFS in `ui/canvas/NodeTraveseral.ts : DFS`:
           * If it has more than 1 connection, then populate `parent_idx` & `parent_idxs_diff_type`
 * Side menu to show hot-key / color coding help
+* Bugfixes:
+  * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save?
+  * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing:
+    * The layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
+    * Also when loading a new file, the layout is really bad - something is not being cleaned up correctly
 * Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
 * Update from TauriV1 to TauriV2
 * Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo

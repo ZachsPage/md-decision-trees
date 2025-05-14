@@ -3,13 +3,16 @@ import {makeObservable, observable, action} from 'mobx';
 export class CanvasStore {
   filePath: string = ""
   saveNodesToFilePath: string = ""
+  showKeyboardHelp: boolean = true
 
   constructor() {
     makeObservable(this, {
       filePath: observable,
       saveNodesToFilePath: observable,
+      showKeyboardHelp: observable,
       setFilePath: action,
-      setSaveNodesToFilePath: action
+      setSaveNodesToFilePath: action,
+      toggleKeyboardHelp: action,
     });
   }
 
@@ -19,6 +22,10 @@ export class CanvasStore {
 
   setSaveNodesToFilePath = (newFilePath: string) => {
     this.saveNodesToFilePath = newFilePath;
+  }
+
+  toggleKeyboardHelp = () => {
+    this.showKeyboardHelp = !this.showKeyboardHelp;
   }
 }
 
