@@ -29,11 +29,14 @@ fn add_opt_node_type(prefix: &mut String, node: &Node) {
     Err(_) => return,
   };
   prefix.push_str(&type_str);
+
+  let has_diff_type_parents: bool = 
+    (found_type == NodeType::Pro || found_type == NodeType::Con) && !node.parent_idxs_diff_type.is_empty();
  
   // Note - if this is empty, may implicitly have a single parent of the node above
   if node.parent_idxs.is_empty() {
     assert!(node.parent_idxs_diff_type.is_empty()); //< Logic error - parent_idxs must be present with parent_idxs_diff_type
-  } else {
+  } else if node.parent_idxs.len() > 1 || has_diff_type_parents {
     prefix.push(',');
     for (i, idx) in node.parent_idxs.iter().enumerate() {
       if i > 0 {
@@ -43,7 +46,7 @@ fn add_opt_node_type(prefix: &mut String, node: &Node) {
     }
   }
 
-  if !node.parent_idxs_diff_type.is_empty() && (found_type == NodeType::Pro || found_type == NodeType::Con) {
+  if has_diff_type_parents {
     prefix.push('-');
     prefix.extend(if found_type == NodeType::Pro { "C" } else { "P" }.chars());
     prefix.push(',');

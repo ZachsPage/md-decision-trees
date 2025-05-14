@@ -98,8 +98,27 @@ export class Renderer {
   }
 
   getNodes(): fromRust.Node[] {
-    // Get the nodes in DFS order since this will match the layout of the files
-    return new DFS([], this).visitedNodes.map(x => this.nodes.find(node => node.id === x)?.data.dataNode);
+    // Get the nodes in DFS order since this should match the files layout
+    const nodeIds = new DFS([], this).visitedNodes;
+    const idToFileOrder = new Map<string, number>();
+    nodeIds.forEach((id, index) => idToFileOrder.set(id, index));
+    // Set parent_idxs & parent_idxs_diff_type
+    // - Doing it now avoids complexity of keeping them aligned with the UI while doing creates / deletes
+    return nodeIds.map(id => {
+      const dataNode = notNull(this.nodes.find(n => n.id === id)).data.dataNode;
+      const incomingEdges = this.edges.filter(edge => edge.target === id);
+      const isPro = (dataNode.type_is === "Pro"), isCon = (dataNode.type_is === "Con");
+      const typeMatchEdgeNNode = (edge: FlowEdge) => {
+        if (!isPro && !isCon) {
+          return true; //< if not pro / con, always treat as sameTypeEdge -> parent_idx instead of diff_type
+        }
+        return (isPro && edge.type === "pro") || (isCon && edge.type === "con");
+      };
+      const edgeSrcToFileIdx = (edges: FlowEdge[]) => { return edges.map(edge => notNull(idToFileOrder.get(edge.source))); }
+      dataNode.parent_idxs = edgeSrcToFileIdx(incomingEdges.filter(typeMatchEdgeNNode));
+      dataNode.parent_idxs_diff_type = edgeSrcToFileIdx(incomingEdges.filter(edge => !typeMatchEdgeNNode(edge)))
+      return dataNode;
+    }) as fromRust.Node[];
   }
 
   // Render functions
