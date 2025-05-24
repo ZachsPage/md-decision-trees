@@ -208,6 +208,7 @@ export class Renderer {
   }
 
   _setUpGraph(): void {
+    this.graph = new dagre.graphlib.Graph();
     this.graph.setDefaultEdgeLabel(() => ({}));
     this.graph.setGraph({rankdir: "TB", ranksep: 100, nodesep: 200});
   }
