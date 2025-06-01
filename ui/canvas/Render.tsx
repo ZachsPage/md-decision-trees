@@ -139,6 +139,17 @@ export class Renderer {
     this.doLayout();
   }
 
+  // Helper function to create an edge object
+  createEdge(sourceId: string, targetId: string, type: 'pro' | 'con' | 'default'): FlowEdge {
+    return {
+      source: sourceId,
+      target: targetId,
+      id: `e${sourceId}-${targetId}`,
+      type: type,
+      style: {stroke: `var(--edge-${type}-color)`, strokeWidth: 3}
+    };
+  }
+
   renderNode(newNode: fromRust.Node, parentIDs: string[], diffTypeParentIDs: string[]): NodeId {
     const newCanvasNode = {
       id: this.nextNodeID.toString(),
@@ -155,16 +166,7 @@ export class Renderer {
     const childNodeID = notNull(newCanvasNode.id);
     const edgeType = newNode.type_is == "Pro" ? "pro" : newNode.type_is == "Con" ? "con" : "default"
     const addNewEdge = (parentID: string, edgeType: string) => {
-      this.edges.push({
-        source: parentID,
-        target: childNodeID,
-        id: `e${parentID}-${childNodeID}`,
-        type: edgeType,
-        style: {
-          stroke: `var(--edge-${edgeType}-color)`,
-          strokeWidth: 3
-        }
-      });
+      this.edges.push(this.createEdge(parentID, childNodeID, edgeType as 'pro' | 'con' | 'default'));
     };
     parentIDs.forEach(parentID => addNewEdge(parentID, edgeType));
     if (edgeType != "default") {
@@ -420,9 +422,7 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
 
   const onPaneClick = useCallback(() => {
     setContextMenu(defaultContextMenuState);
-    
-    // If we're in edge creation mode and clicked on the pane (not a node), cancel the operation
-    if (edgeCreation.active) {
+    if (edgeCreation.active) { // cancel edge creation
       setEdgeCreation({...edgeCreation, active: false, mousePosition: null});
     }
   }, [contextMenu, edgeCreation]);
@@ -457,7 +457,6 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
 
   // Combined function for handling both Pro and Con relationships
   const handleMakeRelationFor = useCallback((targetType: 'pro' | 'con') => {
-    // Start edge creation mode
     setEdgeCreation({
       ...defaultEdgeCreationState,
       active: true,
@@ -465,8 +464,6 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
       sourceNodeType: contextMenu.nodeType,
       targetType: targetType,
     });
-    
-    // Close the context menu
     setContextMenu(defaultContextMenuState);
   }, [contextMenu]);
 
@@ -479,25 +476,30 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     handleMakeRelationFor('con');
   }, [handleMakeRelationFor]);
 
-  // Handle node click to complete edge creation
-  const onNodeClick = useCallback((event: React.MouseEvent, node: FlowNode) => {
-    if (edgeCreation.active) {
-      // Add the new edge
-      const newEdge = {
-        source: edgeCreation.sourceNodeId,
-        target: node.id,
-        id: `e${edgeCreation.sourceNodeId}-${node.id}`,
-        type: edgeCreation.targetType, // Set the edge type based on the relationship type
-        style: {
-          stroke: `var(--edge-${edgeCreation.targetType}-color)`,
-          strokeWidth: 3
+  function maybeUpdateNodeToComparative(nodeId: string) {
+    const connectedEdges = renderer.edges.filter(edge => edge.target === nodeId);
+    if (connectedEdges.length >= 2) { // If node has multiple edges, check if they have different types
+      const edgeTypes = new Set(connectedEdges.map(edge => edge.type));
+      if (edgeTypes.size > 1) { // Node has different types of edges, update its style
+        const nodeIndex = renderer.nodes.findIndex(n => n.id === nodeId);
+        if (nodeIndex !== -1) {
+          renderer.nodes[nodeIndex].className = 'node-comparative';
         }
-      };
+      }
+    }
+  }
+
+  const onNodeClick = useCallback((event: React.MouseEvent, node: FlowNode) => {
+    if (edgeCreation.active) { // clicked node - complete edge creation
+      const newEdge = renderer.createEdge(node.id, edgeCreation.sourceNodeId, edgeCreation.targetType);
       setEdges((eds) => [...eds, newEdge]);
+      renderer.edges.push(newEdge);
+      maybeUpdateNodeToComparative(edgeCreation.sourceNodeId);
+      renderer.doLayout();
       setEdgeCreation(defaultEdgeCreationState);
       event.stopPropagation(); //< Prevent the default node click behavior
     }
-  }, [edgeCreation, setEdges]);
+  }, [edgeCreation, setEdges, renderer]);
 
   // Render the temporary edge
   const renderTemporaryEdge = () => {

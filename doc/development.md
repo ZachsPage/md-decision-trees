@@ -51,7 +51,7 @@ Here is a list of in order milestones to guide this project:
 
 ### Additions
 * Update to use `reactflow` instead of `cytoscape` - done
-* Add comparative node feature:
+* Add comparative node feature - done
   * Add a right / context click menu for nodes - but should only appear if the node is a Pro or Con
     * Make the menu show "Add relationship..." - when hovering over "Add relationship...", a sub-menu should extend to the right, and show two options: "Make Pro for..." or "Make Con for..."
   * When "Make Pro / Con for..." is clicked:
@@ -84,20 +84,24 @@ Here is a list of in order milestones to guide this project:
             * This approach will likely get tricky for when nodes are added or removed - so maybe go with the next option?
         * 2. Populate these fields while doing DFS in `ui/canvas/NodeTraveseral.ts : DFS`:
           * If it has more than 1 connection, then populate `parent_idx` & `parent_idxs_diff_type`
-* Side menu to show hot-key / color coding help
+* Side menu to show hot-key / color coding help - done
 * Bugfixes:
-  * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save?
+  * When loading a new file, the layout is really bad - something is not being cleaned up correctly - done
+  * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save? - done
+  * With comparative nodes, sometimes stops being able to select some child nodes:
+    * Fix the traverser bug - ex. `05_comparative_encoding_output.md`
+    * Make it so that double clicking also selects the node as the root traverser
   * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing:
     * The layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
-    * Also when loading a new file, the layout is really bad - something is not being cleaned up correctly
+* Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
+* Store program state for user to re-open last used file?
 * Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
-* Update from TauriV1 to TauriV2
 * Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
+* Update from TauriV1 to TauriV2
 * Support multi-line entries
 * Pop-up to confirm deletion
 * Option to create nodes as parents instead - ctrl+c, ctrl+p, then d o n 
   * Or, maybe do ctrl+j to create down & ctrl+k to create up?
-* Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
 * Make node text node collapsible (only show partial text)
 * Bundling
 * Replace quick file opener with a file explorer in the left toolbar (program arg for root dir, only show `*.md` files)
