@@ -46,7 +46,8 @@ export class DFS {
 export class NodeTraverseSelection {
   renderer?: Renderer;
   curr: NodeId | null;
-  firstParent: NodeId | null = null
+  currParent: NodeId | null = null;
+  lastDepthChangeParent: NodeId | null = null; // covers the case where a node has multiple parents
   rightSibs: NodeId[] = []
   leftSibs: NodeId[] = []
 
@@ -74,12 +75,12 @@ export class NodeTraverseSelection {
     
     const childrenIds = getNodeIds(graph.successors(this.curr));
     if (childrenIds.length > 0) {
-      this.populateFrom(childrenIds[0]);
+      this.populateFrom(childrenIds[0], this.curr);
     }
   }
 
   moveUp() {
-    this.populateFrom(this.firstParent);
+    this.populateFrom(this.currParent);
   }
 
   moveRight() {
@@ -93,7 +94,7 @@ export class NodeTraverseSelection {
   }
  
   // Populates member variables starting from startingNode to be used for switching which node is selected
-  populateFrom(startingNodeId: NodeId | null) {
+  populateFrom(startingNodeId: NodeId | null, depthChangeParent: NodeId | null = null) {
     if (!startingNodeId || startingNodeId.length == 0) { return; }
     
     const graph = this._graph();
@@ -104,15 +105,24 @@ export class NodeTraverseSelection {
     
     const parents = graph.predecessors(this.curr);
     const parentIds = getNodeIds(parents);
-    this.firstParent = (parentIds.length > 0 && parentIds.indexOf(this.curr) === -1) ? parentIds[0] : null;
+    const isRoot = parentIds.length == 0;
+    if (depthChangeParent) {
+      this.lastDepthChangeParent = depthChangeParent;
+    }
     
-    // Get the siblings - handle if its a root or if it has actual siblings
     let sibIds: NodeId[] = [];
-    if (this.firstParent) {
-      const siblings = graph.successors(this.firstParent);
-      sibIds = getNodeIds(siblings);
-    } else {
+    if (isRoot) {
       sibIds = getRootNodeIDs(graph);
+    } else {
+      // Avoid some sibs being untraversable if node has multiple parents - populate from prev selected parent first
+      if (this.lastDepthChangeParent && parentIds.indexOf(this.lastDepthChangeParent) !==-1) {
+        parentIds.unshift(this.lastDepthChangeParent);
+      }
+      this.currParent = parentIds[0];
+      for (const parentId of parentIds) {
+        const siblings = graph.successors(parentId);
+        sibIds.push(...getNodeIds(siblings));
+      }
     }
     
     // Separate the siblings between left and right

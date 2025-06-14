@@ -88,12 +88,12 @@ Here is a list of in order milestones to guide this project:
 * Bugfixes:
   * When loading a new file, the layout is really bad - something is not being cleaned up correctly - done
   * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save? - done
-  * With comparative nodes, sometimes stops being able to select some child nodes:
+  * With comparative nodes, sometimes stops being able to select some child nodes - done
     * Fix the traverser bug - ex. `05_comparative_encoding_output.md`
-    * Make it so that double clicking also selects the node as the root traverser
   * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing:
     * The layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
 * Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
+* Double click to select the node as the root traverser, instead of only supporting hjkl
 * Store program state for user to re-open last used file?
 * Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
 * Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
