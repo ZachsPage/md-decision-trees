@@ -58,8 +58,13 @@ function getTextDimensions(text: string, minWidth: number, maxWidth: number, fon
   return {width: Math.min(width, maxWidth), height};
 }
 
+// Callbacks that the backend need to populate for the Renderer
+export class BackendCBs {
+  onNodeSelect: ((selectedNodeId: NodeId | null, cb: (() => void) | null) => void) | null = null;
+}
+
+// Graph backend wrapper to help with common render operations, needed for creating / selecting / updating nodes
 export class Renderer {
-  nodeTraverser: NodeTraverseSelection | null = null;
 
   // Public interaction functions
   getNodeTraverser(optStartingNode: SelectedNode | null): NodeTraverseSelection {
@@ -195,9 +200,11 @@ export class Renderer {
   // Members
   graph = new dagre.graphlib.Graph();
   nodeClickCB: OnNodeClickCB | null = null;
+  backendCBs: BackendCBs = new BackendCBs();
   nextNodeID: number = 0;
   nodes: FlowNode[] = [];
   edges: FlowEdge[] = [];
+  nodeTraverser: NodeTraverseSelection | null = null;
   renderGraph: ((nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void) | null = null;
   doubleClickNode: ((nodeId: NodeId) => void) | null = null;
   nodeBeingEdited: Element | null = null;
@@ -233,18 +240,21 @@ export class Renderer {
   onNodeSelect(selectedNodeId: NodeId | null, cb: (() => void) | null = null): void {
     // Give user the nodes render attributes to allow drawing over it & the unwrapped node
     let selectedNode = null as SelectedNode | null;
-    this.nodes.forEach(node => { 
-      if (node.id === selectedNodeId) {
-        node.className = `${node.className} node-selected`;
+    if (selectedNodeId) {
+      const node = this.nodes.find(node => node.id === selectedNodeId);
+      if (node) {
         selectedNode = new SelectedNode(node.data.dataNode, node.id);
-      } else {
-        node.className = node.className?.replace(' node-selected', '') || '';
       }
-    });
+    }
     if (selectedNode) {
       notNull(this.nodeClickCB)(selectedNode);
     }
-    this._rerenderNodes(cb);
+    if (this.backendCBs.onNodeSelect) {
+      this.backendCBs.onNodeSelect(selectedNodeId, cb);
+    }
+    if (cb) {
+      cb();
+    }
   }
 
   isEditingNode(): boolean { 
@@ -276,6 +286,8 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   const nodeElementTextBoxId = `custom-node-${id}-text`; //< Use to externally focus on create due to bug
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.label);
+  const { getNode } = useReactFlow();
+  const isSelected = getNode(id)?.selected;
   
   useEffect(() => { setText(data.label);}, [data.label]);
   
@@ -295,7 +307,12 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   }, [id, text, data]);
  
   return (
-    <div id={nodeElementId} onDoubleClick={handleDoubleClick} onKeyDown={handleKeyDown}>
+    <div 
+      id={nodeElementId} 
+      onDoubleClick={handleDoubleClick} 
+      onKeyDown={handleKeyDown}
+      className={`${data.className} ${isSelected ? 'node-selected' : ''}`}
+    >
       <Handle type="target" position={Position.Top} />
       {!isEditing
       ? <div className="node-content">{text}</div> 
@@ -346,6 +363,7 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   // Custom node / edge types
   const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
   const edgeTypes = useMemo(() => ({
@@ -501,7 +519,6 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     }
   }, [edgeCreation, setEdges, renderer]);
 
-  // Render the temporary edge
   const renderTemporaryEdge = () => {
     if (!edgeCreation.active || !edgeCreation.mousePosition) return null;
     // Get the handle position
@@ -543,6 +560,21 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
       fitView({ padding: 0.2 }); //< re-fit now that we have nodes - TODO this happens each traversal as well...
     }
   }, [nodes, fitView]);
+
+  function onNodeSelect(selectedNodeId: NodeId | null): void {
+    setSelectedNodeId(selectedNodeId);
+    setNodes((nds) => 
+      nds.map((node) => ({
+        ...node,
+        selected: node.id === selectedNodeId
+      }))
+    );
+  }
+
+  // Set up the callbacks in the renderer
+  useEffect(() => {
+    renderer.backendCBs.onNodeSelect = onNodeSelect;
+  }, [renderer]);
 
   return (
     <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>

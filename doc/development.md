@@ -93,6 +93,7 @@ Here is a list of in order milestones to guide this project:
   * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing:
     * The layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
 * Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
+* Update delete / remove to only totally delete nodes when last parent was removed
 * Double click to select the node as the root traverser, instead of only supporting hjkl
 * Store program state for user to re-open last used file?
 * Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
