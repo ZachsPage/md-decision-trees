@@ -342,7 +342,7 @@ const CustomEdgeComp = ({ sourceX, sourceY, targetX, targetY, type = 'default' }
 
 // Inner component that uses ReactFlow hooks
 const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element => {
-  const { getNode } = useReactFlow();
+  const { getNode, fitView } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
@@ -538,6 +538,11 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     );
   };
 
+  useEffect(() => {
+    if (nodes.length > 0) {
+      fitView({ padding: 0.2 }); //< re-fit now that we have nodes - TODO this happens each traversal as well...
+    }
+  }, [nodes, fitView]);
 
   return (
     <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
