@@ -29,10 +29,14 @@ import NodeContextMenu from '../components/NodeContextMenu';
 import { KeyboardHelp } from '../modals/KeyboardHelp';
 import { canvasStore } from "../stores/CanvasStore";
 
-// Triggered when a node is clicked
-type OnNodeClickCB = (selectedNode: SelectedNode) => void;
-
 export type NodeId = string;
+
+// What should happen when the renderer finished updating which node is selected
+type UpdateSelectedNodeCB = (selectedNode: SelectedNode) => void;
+
+type renderedNewNodeCB = (newNodeId: NodeId) => void; //< Called once new node is rendered
+
+type Callback = () => void; //< Generic callback
 
 // From copilot - used to feed height / width into dagre to avoid overlapping nodes
 function getTextDimensions(text: string, minWidth: number, maxWidth: number, font: string = '16px Arial'): { width: number, height: number } {
@@ -60,22 +64,14 @@ function getTextDimensions(text: string, minWidth: number, maxWidth: number, fon
 
 // Callbacks that the backend need to populate for the Renderer
 export class BackendCBs {
-  onNodeSelect: ((selectedNodeId: NodeId | null, cb: (() => void) | null) => void) | null = null;
+  updateSelection: ((selectedNodeId: NodeId | null, cb?: Callback) => void) | null = null;
 }
 
 // Graph backend wrapper to help with common render operations, needed for creating / selecting / updating nodes
 export class Renderer {
 
   // Public interaction functions
-  getNodeTraverser(optStartingNode: SelectedNode | null): NodeTraverseSelection {
-    const startingNodeId = optStartingNode ? optStartingNode.renderID : "0"
-    if (!this.nodeTraverser || !optStartingNode) {
-      this.nodeTraverser = new NodeTraverseSelection(this, startingNodeId);
-    }
-    return notNull(this.nodeTraverser);
-  }
-
-  createNode(type: fromRust.NodeType, parent: SelectedNode | undefined | null): NodeId {
+  createNode(type: fromRust.NodeType, parent?: SelectedNode, cb?: renderedNewNodeCB): NodeId {
     let newNode: fromRust.Node = {
       text: "",
       file_order: 0, //< Doesnt matter - will be populated correctly in getNodes
@@ -85,7 +81,7 @@ export class Renderer {
       parent_idxs_diff_type: [] //< TODO
     };
     let newNodeID = this.renderNode(newNode, parent ? [parent.renderID] : [], []);
-    this.doLayout();
+    this.doLayout(cb ? () => { cb(newNodeID); } : undefined);
     return newNodeID;
   }
 
@@ -101,7 +97,6 @@ export class Renderer {
     });
     this.doLayout();
     this.onNodeSelect(parentToSelectId); 
-    this.nodeTraverser = new NodeTraverseSelection(this, parentToSelectId);
   }
 
   getNodes(): fromRust.Node[] {
@@ -180,7 +175,7 @@ export class Renderer {
     return newCanvasNode.id;
   }
 
-  doLayout(): void {
+  doLayout(cb?: Callback): void {
     this.nodes.forEach(node => { 
       // TODO: This works okay but not great - may need to switch to a different layout library like elkjs
       const textDim = getTextDimensions(node.data.label, 50, 190);
@@ -194,24 +189,23 @@ export class Renderer {
         node.position = {x: nodeWithPosition.x, y: nodeWithPosition.y}
       }
     });
-    this._rerenderNodes();
+    this._rerenderNodes(cb);
   }
 
   // Members
   graph = new dagre.graphlib.Graph();
-  nodeClickCB: OnNodeClickCB | null = null;
+  updateSelectedNodeCB: UpdateSelectedNodeCB | null = null;
   backendCBs: BackendCBs = new BackendCBs();
   nextNodeID: number = 0;
   nodes: FlowNode[] = [];
   edges: FlowEdge[] = [];
-  nodeTraverser: NodeTraverseSelection | null = null;
   renderGraph: ((nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void) | null = null;
   doubleClickNode: ((nodeId: NodeId) => void) | null = null;
   nodeBeingEdited: Element | null = null;
 
   // Init
-  constructor(nodeClickCB : OnNodeClickCB) {
-    this.nodeClickCB = nodeClickCB;
+  constructor(updateSelectedNodeCB : UpdateSelectedNodeCB) {
+    this.updateSelectedNodeCB = updateSelectedNodeCB;
     this._setUpGraph();
     this.doLayout();
   }
@@ -230,15 +224,14 @@ export class Renderer {
     this.doubleClickNode = doubleClickNode; 
   }
   
-  _rerenderNodes(cb: (() => void) | null = null): void {
+  _rerenderNodes(cb?: Callback): void {
     if (this.renderGraph) {
-      this.renderGraph(this.nodes, this.edges, cb || undefined);
+      this.renderGraph(this.nodes, this.edges, cb);
     }
   }
 
   // User interaction functions
-  onNodeSelect(selectedNodeId: NodeId | null, cb: (() => void) | null = null): void {
-    // Give user the nodes render attributes to allow drawing over it & the unwrapped node
+  onNodeSelect(selectedNodeId: NodeId | null, cb?: Callback, fromBackend: boolean = false): void {
     let selectedNode = null as SelectedNode | null;
     if (selectedNodeId) {
       const node = this.nodes.find(node => node.id === selectedNodeId);
@@ -246,14 +239,9 @@ export class Renderer {
         selectedNode = new SelectedNode(node.data.dataNode, node.id);
       }
     }
-    if (selectedNode) {
-      notNull(this.nodeClickCB)(selectedNode);
-    }
-    if (this.backendCBs.onNodeSelect) {
-      this.backendCBs.onNodeSelect(selectedNodeId, cb);
-    }
-    if (cb) {
-      cb();
+    notNull(this.updateSelectedNodeCB)(selectedNode);
+    if (this.backendCBs.updateSelection && !fromBackend) {
+      this.backendCBs.updateSelection(selectedNodeId, cb);
     }
   }
 
@@ -359,7 +347,7 @@ const CustomEdgeComp = ({ sourceX, sourceY, targetX, targetY, type = 'default' }
 
 // Inner component that uses ReactFlow hooks
 const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element => {
-  const { getNode, fitView } = useReactFlow();
+  const { getNode, fitView, setNodes: setReactFlowNodes } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
@@ -561,26 +549,34 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     }
   }, [nodes, fitView]);
 
-  function onNodeSelect(selectedNodeId: NodeId | null): void {
-    setSelectedNodeId(selectedNodeId);
-    setNodes((nds) => 
-      nds.map((node) => ({
-        ...node,
-        selected: node.id === selectedNodeId
-      }))
+  // Internal reactflow callback - used to catch node clicks to select
+  const onSelectionChange = useCallback(({ nodes }: { nodes: FlowNode[] }) => {
+    if (nodes.length === 1) {
+      renderer.onNodeSelect(nodes[0].id, undefined, true);
+    }
+  }, [renderer]);
+
+  // Callback used by Renderer to show the current selection
+  const updateSelection = useCallback((nodeId: string | null, cb?: Callback) => {
+    setReactFlowNodes((nds) => 
+      nds.map((node) => ({ ...node, selected: node.id === nodeId }))
     );
-  }
+    if (cb) {
+      cb()
+    }
+  }, [setReactFlowNodes]);
 
   // Set up the callbacks in the renderer
   useEffect(() => {
-    renderer.backendCBs.onNodeSelect = onNodeSelect;
-  }, [renderer]);
+    renderer.backendCBs.updateSelection = updateSelection;
+  }, [renderer, updateSelection]);
 
   return (
     <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
       <ReactFlow fitView defaultEdgeOptions={{animated: false}}
         nodes={nodesWithHandlers} edges={edges}
         onNodesChange={onNodesChange}
+        onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes} 
         edgeTypes={edgeTypes}
         zoomOnDoubleClick={false}
