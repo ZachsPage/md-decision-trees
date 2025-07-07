@@ -81,21 +81,22 @@ export const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ onClose }) => {
         { keyText: "n", description: "Note" },
     ]},
     { title: "Edit:", shortcuts: [
-        { keyText: "Ctrl + m, <letter from 'NodeTypes'>", description: "Make new node" },
+        { keyText: "Ctrl + m, <letter from 'NodeTypes' section>", description: "Make new node" },
         { keyText: "Ctrl + e", description: "Edit (re-press to save)" },
         { keyText: "Ctrl + d", description: "Delete currently selected node & children" },
     ]},
     { title: "Navigation:", grid: true, shortcuts: [
+        { keyText: "esc", description: "Clear selection" },
         { keyText: "j", description: "Down" },
         { keyText: "k", description: "Up" },
         { keyText: "h", description: "Right" },
-        { keyText: "l", description: "Left" }
+        { keyText: "l", description: "Left" },
     ]},
     { title: "Mouse", shortcuts: [
-        { keyText: "click + drag", description: "Move around" },
-        { keyText: "click anywhere", description: "Deselect node" },
-        { keyText: "click node + drag", description: "Move node layout" },
         { keyText: "right click node", description: "Node options - ex. change relationships" },
+        { keyText: "scroll", description: "Zoom in/out" },
+        { keyText: "click + drag", description: "Move view" },
+        { keyText: "click node + drag", description: "Move node layout" },
     ]},
   ];
 

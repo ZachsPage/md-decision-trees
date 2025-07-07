@@ -90,14 +90,17 @@ Here is a list of in order milestones to guide this project:
   * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save? - done
   * With comparative nodes, sometimes stops being able to select some child nodes - done
     * Fix the traverser bug - ex. `05_comparative_encoding_output.md`
-  * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing:
-    * The layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
-* Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
+* Optimize re-renders:
+  * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing - done
+  * Double click to select the node as the root traverser, instead of only supporting hjkl - done
+  * When creating a new node, all nodes reset their positions:
+    * Avoid re-render of everything when creating new node? Or better to restore all node positions?
+* The node layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
 * Update delete / remove to only totally delete nodes when last parent was removed
-* Double click to select the node as the root traverser, instead of only supporting hjkl
+* Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
 * Store program state for user to re-open last used file?
-* Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
-* Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
+* Slider to collapse based on type (doesn't affect file content)
+* Undo / redo for text & node manipulation
 * Update from TauriV1 to TauriV2
 * Support multi-line entries
 * Pop-up to confirm deletion

@@ -80,25 +80,6 @@ To install for linux:
 * `pnpm tauri build`
 * `sudo apt-get install src-tauri/target/release/bundle/deb/md-decision-trees_0.0.0_amd64.deb`
 
-### Mouse 
-Click and drag - move the canvas around
-Scroll - change the zoom level
-
-### Keyboard Use / Shortcuts
-`h j k l` - Vim movement to walk through the tree:
-* h / l - left and right siblings & j / k - parents & children
-
-`esc` - Various exits - ex. to close the "Error Console" if it appears, clear selection, etc
-`ctrl+m <node type, like d o p c n>` - Make nodes of a certain type:
-* ex. `ctrl+m d` to create a Decision, `ctrl+m o` for an Option
-
-`ctrl+e` - Edit the selected node's text **then** press `ctrl+e` again to save the edit:
-* Can press `esc` or click elsewhere to cancel the text changes
-
-`ctrl+d` - Delete selected node & its children
-`ctrl+z` - Zoom to fit the as much tree as possible
-`ctrl+s` - Save the current file
-
 ## Folder Layout / Links
 `doc`
 * [ADRs](./doc/ADRs/README.md)
