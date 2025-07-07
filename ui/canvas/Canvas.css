@@ -58,10 +58,9 @@
 }
 
 .node-comparative {
-  background: var(--node-con-color);
+  background: var(--node-pro-color);
   border: 2px solid #000000;
   border-radius: 8px;
-  padding: 10px;
   min-width: 150px;
   min-height: 40px;
   color: #000000;
@@ -71,22 +70,17 @@
 
 /* Make the diagonal line split reliable using this approach - otherwise the colors bleed when zooming */
 .node-comparative::before {
-  content: '';
+  /* Creates a diagonal split between the two colors */
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 200%;
-  height: 200%;
-  background: var(--node-pro-color);
-  transform: rotate(-45deg);
-  transform-origin: 30% 0;
-  z-index: 0;
-  pointer-events: none;
+  content: '';
+  background: var(--node-con-color);
+  /* This avoids hiding the blue outline when selection is active */
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
 }
 
 .node-comparative .node-content {
   position: relative;
-  z-index: 1;
 }
 
 /* Textarea styles for node editing */
@@ -101,16 +95,15 @@
   padding: 0;
   margin: 0;
   position: relative;
-  z-index: 2;
 }
 
 .node-comparative .node-textarea {
   background: transparent;
   position: relative;
-  z-index: 2;
 }
 
 /* Selected node style */
 .node-selected {
-  border: 5px solid #0000FF;
-} 
+  outline: 5px solid #0000FF;
+  outline-offset: -2px; /* Avoids hiding outline with node-comparative */
+}
