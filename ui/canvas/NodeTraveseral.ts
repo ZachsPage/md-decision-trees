@@ -4,7 +4,7 @@ import * as dagre from 'dagre';
 
 // Helper function to safely get node IDs from graph operations
 // - Seems like dagre node type doesnt have ".id", but it does?
-function getNodeIds(nodes: any[] | undefined): NodeId[] {
+export function getNodeIds(nodes: any[] | undefined): NodeId[] {
   if (!nodes) return [];
   if (nodes.length > 0 && typeof nodes[0] === 'string') {
     return nodes as NodeId[];

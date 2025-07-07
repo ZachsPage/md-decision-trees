@@ -24,7 +24,7 @@ import './Canvas.css';
 
 import * as fromRust from "../bindings/bindings"
 import {SelectedNode} from "./key-handlers/NodeSelector"
-import {DFS, NodeTraverseSelection} from "./NodeTraveseral"
+import {DFS, getNodeIds} from "./NodeTraveseral"
 import NodeContextMenu from '../components/NodeContextMenu';
 import { KeyboardHelp } from '../modals/KeyboardHelp';
 import { canvasStore } from "../stores/CanvasStore";
@@ -87,16 +87,16 @@ export class Renderer {
 
   removeNode(renderID: NodeId): void {
     const nodesToRemove: NodeId[] = new DFS([renderID], this).visitedNodes
-    let parentToSelectId: NodeId | null = this.nodes.find(node => node.id === nodesToRemove[0])?.data.dataNode.parent_idxs[0];
-    parentToSelectId = parentToSelectId ? parentToSelectId : "0";
+    // Use dagre graph to get the first parent of the first node to remove
+    const parentIds = nodesToRemove.length > 0 ? getNodeIds(this.graph.predecessors(nodesToRemove[0])) : [];
+    const parentToSelectId = parentIds.length > 0 ? parentIds[0] : "0";
     // Need to remove from the graph (will also remove edges), but also remove them on our end
     nodesToRemove.forEach(nodeID => { this.graph.removeNode(nodeID); });
     this.nodes = this.nodes.filter(node => !nodesToRemove.includes(node.id));
     this.edges = this.edges.filter(edge => {
       return !nodesToRemove.includes(edge.source) && !nodesToRemove.includes(edge.target);
     });
-    this.doLayout();
-    this.onNodeSelect(parentToSelectId); 
+    this.doLayout(() => { this.onNodeSelect(parentToSelectId); });
   }
 
   getNodes(): fromRust.Node[] {
