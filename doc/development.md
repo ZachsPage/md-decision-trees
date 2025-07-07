@@ -97,6 +97,7 @@ Here is a list of in order milestones to guide this project:
     * Avoid re-render of everything when creating new node? Or better to restore all node positions?
 * The node layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
 * Update delete / remove to only totally delete nodes when last parent was removed
+* Bug around traverser lifetime when deleting entire tree
 * Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
 * Store program state for user to re-open last used file?
 * Slider to collapse based on type (doesn't affect file content)
