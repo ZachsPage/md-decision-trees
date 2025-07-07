@@ -50,22 +50,63 @@ Here is a list of in order milestones to guide this project:
 * Update README to contain keyboard shortcuts - done
 
 ### Additions
-* Support ProCons like `PC-P1-C2` - this approach allows a single attribute to be a Pro for 1 or more options, but a Con for other
-  * Support context menu for nodes - show "Make Pro For..." & "Make Con For..."
-    * Was thinking "Break Pro/Con For...", but this will be covered with `undo` support
-  * Allow user to click, then draw another line to that node - green for `Pro`, red for `Con`
-  * Encode the right clicked node as `PC`, take original node as `-P<Option ID>`, and new node as `-<P/C><Option ID>`
-    * Need to revist ID's for this - think its just `file_order`, though updating would be a concern later
-* Slider to collapse based on type (doesn't affect file content) - https://github.com/iVis-at-Bilkent/cytoscape.js-expand-collapse
-* Side menu to show hot-key / color coding help
-* Update to use `reactflow` instead of `cytoscape`
+* Update to use `reactflow` instead of `cytoscape` - done
+* Add comparative node feature - done
+  * Add a right / context click menu for nodes - but should only appear if the node is a Pro or Con
+    * Make the menu show "Add relationship..." - when hovering over "Add relationship...", a sub-menu should extend to the right, and show two options: "Make Pro for..." or "Make Con for..."
+  * When "Make Pro / Con for..." is clicked:
+    * For the UI:
+      * Close the menu, and create an edge with one end connected to the selected node, and the other end connected to the users mouse - which moves when the mouse moves
+      * Then, handle the two user options:
+        * If the user presses their escape key, stop the process and remove the pending edge
+        * If the user clicks a node, finish connecting the edge to the source & target node
+    * For the backend:
+      * Discuss how to to encode these types of bullets - refer to `src-tauri/test/data/03_basic_encoding.md` for what we have now:
+        * The idea would be - instead of simply `P:` for Pro & `C:` for con, lets extend that to account for each new relationship, since we can have multiple:
+          * If it is a `Pro` for more than 1 node, encode it `P,<node's file_order 1>,<nodes file_order 2>,etc` 
+          * If a `Pro` is also a `Con`, then append `-C,<file_order 3>,<file_order 4>` etc
+          * The same should be done for a a `Con` that becomes a `Con` for multiple nodes, or is also a `Pro` for nodes
+          * Please ask any questions concerning this, or tell me any other approaches you have, or confirm that this approach sounds good
+      * For the Rust updates:
+        * Update `src-tauri/src/mdt/structs.rs : Node` to also have `pub parent_idxs_diff_type: Vec<u32> //< If type_is Pro/Con, but this node is also a Con/Pro for other nodes, hold those indexes here`
+        * When writing these new nodes out in `src-tauri/src/mdt/file_write.rs`, encode them as in the idea we previously discussed, and add some tests
+          * The test should write out a new file like `src-tauri/test/data/05_comparative_encoding.md`
+        * Populate this new field in `src-tauri/src/mdt/parsers/bullet_file_parser.rs` using the encoding idea we discussed 
+          * Add some tests that read in the `05_comparative_encoding.md` we made for the writer tests - this helps with end to end testing
+      * For the final UI updates that tie the previous tasks together:
+        * Add logic to `ui/canvas/Render.tsx` to handle the new `parent_idxs_diff_type` field:
+          * Style this as a `node-comparative` - which the node color should be a diagonal line splitting the pro / con colors (red / green)
+          * Each new edge drawn from that node should be red or green - depending on if the node is a pro / con for its connecting node
+    * Now using the previous menu changes we did to make these new connections:
+      * When a `Pro` is used to "Make a Pro for...", add the target nodes index to `parent_idxs` - if used for "Make a Con for...", then add the target nodes index to `parent_idxs_diff_type`. Start with Pros then do Cons as well.
+        * This can be done in 1 of 2 approach - but open to other approaches as well:
+          * 1: Do this on node connection - if it is a new connection of the same type, add it to `parent_idxs` - if a different type of connection than node type, add it to `parent_idxs_diff_type`
+            * This approach will likely get tricky for when nodes are added or removed - so maybe go with the next option?
+        * 2. Populate these fields while doing DFS in `ui/canvas/NodeTraveseral.ts : DFS`:
+          * If it has more than 1 connection, then populate `parent_idx` & `parent_idxs_diff_type`
+* Side menu to show hot-key / color coding help - done
+* Bugfixes:
+  * When loading a new file, the layout is really bad - something is not being cleaned up correctly - done
+  * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save? - done
+  * With comparative nodes, sometimes stops being able to select some child nodes - done
+    * Fix the traverser bug - ex. `05_comparative_encoding_output.md`
+* Optimize re-renders:
+  * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing - done
+  * Double click to select the node as the root traverser, instead of only supporting hjkl - done
+  * When creating a new node, all nodes reset their positions:
+    * Avoid re-render of everything when creating new node? Or better to restore all node positions?
+* The node layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
+* Update delete / remove to only totally delete nodes when last parent was removed
+* Bug around traverser lifetime when deleting entire tree
+* Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
+* Store program state for user to re-open last used file?
+* Slider to collapse based on type (doesn't affect file content)
+* Undo / redo for text & node manipulation
 * Update from TauriV1 to TauriV2
-* Undo / redo for text & node manipulation - https://www.npmjs.com/package/cytoscape-undo-redo
 * Support multi-line entries
 * Pop-up to confirm deletion
 * Option to create nodes as parents instead - ctrl+c, ctrl+p, then d o n 
   * Or, maybe do ctrl+j to create down & ctrl+k to create up?
-* Figure out Pro to one branch but a Con to another - make color light brown, make lines green / red (pro/con)
 * Make node text node collapsible (only show partial text)
 * Bundling
 * Replace quick file opener with a file explorer in the left toolbar (program arg for root dir, only show `*.md` files)

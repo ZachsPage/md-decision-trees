@@ -1,6 +1,6 @@
 # md-decision-trees
 ## Demo
-Here is a demo visualizing a file, navigating, creating a new Con, saving the file, deleting a con & its note, then saving again:
+Here is a demo visualizing creating a new file to visualize - showing creating pros / cons / comparative nodes, deleting nodes, and updating the file:
 
 ![demo](./doc/md_decision_tree_demo.gif)
 
@@ -52,7 +52,7 @@ In the UI, each type will have its own color coding for clarity:
 ### Mapping Rules
 Decisions can have 1 to many Options - labeled `O1` / `O2` / etc  
 Options can have none or many Pros / Cons / child Decisions  
-Pros / Cons can also associate with one to many Options (not implemented): 
+Pros / Cons can also associate with one to many Options - called `Comparative` nodes
 * The association can be opposite - ex. a Pro for `O1` is a con for `O2`
 * This will likely be tracked with tokens like `P1O1C1O2`  
 
@@ -80,25 +80,6 @@ To install for linux:
 * `pnpm tauri build`
 * `sudo apt-get install src-tauri/target/release/bundle/deb/md-decision-trees_0.0.0_amd64.deb`
 
-### Mouse 
-Click and drag - move the canvas around
-Scroll - change the zoom level
-
-### Keyboard Use / Shortcuts
-`h j k l` - Vim movement to walk through the tree:
-* h / l - left and right siblings & j / k - parents & children
-
-`esc` - Various exits - ex. to close the "Error Console" if it appears, clear selection, etc
-`ctrl+m <node type, like d o p c n>` - Make nodes of a certain type:
-* ex. `ctrl+m d` to create a Decision, `ctrl+m o` for an Option
-
-`ctrl+e` - Edit the selected node's text **then** press `ctrl+e` again to save the edit:
-* Can press `esc` or click elsewhere to cancel the text changes
-
-`ctrl+d` - Delete selected node & its children
-`ctrl+z` - Zoom to fit the as much tree as possible
-`ctrl+s` - Save the current file
-
 ## Folder Layout / Links
 `doc`
 * [ADRs](./doc/ADRs/README.md)
@@ -110,4 +91,4 @@ Scroll - change the zoom level
 `src-tauri` - Rust "back end" for parsing / writing files  
 * `icons` - used for bundled program (not the UI)
 
-`ui` - React "front end" for visualizing / interacting with decision tree nodes  
+[`ui`](./ui/README.md) - React "front end" for visualizing / interacting with decision tree nodes  

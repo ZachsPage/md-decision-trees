@@ -37,8 +37,8 @@
         "fullscreen": false,
         "resizable": true,
         "title": "md-decision-trees",
-        "width": 800,
-        "height": 600
+        "width": 1280,
+        "height": 800
       }
     ]
   }

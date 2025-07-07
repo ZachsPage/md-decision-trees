@@ -4,6 +4,7 @@ import {errorStore} from "../stores/ErrorStore"
 import * as fromRust from "../bindings/bindings"
 import {open, save} from "@tauri-apps/api/dialog"
 import {observer} from 'mobx-react';
+import { ViewMenu } from "./ViewMenu";
 
 export const TopToolbar : React.FC = observer(() => {
     const getFileName = (filePath: String): String | undefined => {
@@ -12,7 +13,7 @@ export const TopToolbar : React.FC = observer(() => {
     // TODO - <button>File</button / View / Tools / Help
     return (
         <div id="top-toolbar">
-          <button>View</button>
+          <ViewMenu />
           <div id="file-name">File Name: {getFileName(canvasStore.filePath)}</div>
         </div>
     );

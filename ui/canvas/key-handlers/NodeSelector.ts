@@ -16,6 +16,7 @@ export class SelectedNode {
 export class NodeSelector {
   renderer?: Renderer;
   selectedNode: SelectedNode | null = null;
+  traverser: NodeTraverseSelection | null = null;
 
   constructor(renderer: Renderer) {
     this.renderer = renderer;
@@ -23,8 +24,10 @@ export class NodeSelector {
 
   setSelectedNode(newNode: SelectedNode | null): void { 
     this.selectedNode = newNode;
-    if (!newNode) {
-      this._nodeTraverser()?.clear();
+    if (!this.selectedNode) {
+      this.traverser = null;
+    } else if (this.traverser && this.traverser.currNodeId() != this.selectedNode?.renderID) {
+      this.traverser = new NodeTraverseSelection(notNull(this.renderer), this.selectedNode?.renderID);
     }
   }
 
@@ -33,15 +36,17 @@ export class NodeSelector {
   }
 
   _nodeTraverser(): NodeTraverseSelection {
-    return notNull(this.renderer).getNodeTraverser(this.selectedNode);
+    return notNull(this.traverser);
   }
 
   /// Return true if event has handled
   handleKeyEvent(event: KeyboardEvent): boolean {
     if (event.ctrlKey) { return false; }
     if (event.key != 'j' && event.key != 'k' && event.key != 'h' && event.key != 'l') { return false; }
-    if (!this.selectedNode) {
+    const prevSelectedId = this.traverser ? this.traverser.currNodeId() : null;
+    if (!prevSelectedId) {
       /* Start at first node instead of going that direction immediately */
+      this.traverser = new NodeTraverseSelection(notNull(this.renderer), "0")
     } else if (event.key === 'j') {
       this._nodeTraverser().moveDown();
     } else if (event.key === 'k') {
@@ -52,7 +57,7 @@ export class NodeSelector {
       this._nodeTraverser().moveRight();
     }
     const maybeNewNodeId = this?._nodeTraverser().currNodeId();
-    if (maybeNewNodeId != this.selectedNode?.renderID) {
+    if (maybeNewNodeId != prevSelectedId) {
       this?.renderer?.onNodeSelect(maybeNewNodeId);
     }
     return true;

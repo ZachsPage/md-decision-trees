@@ -1,5 +1,5 @@
 import { Canvas } from "../Canvas";
-import { Renderer } from "../Render";
+import { Renderer, NodeId } from "../Render";
 import { notNull } from "../../Utils"
 import { errorStore } from "../../stores/ErrorStore"
 import * as fromRust from "../../bindings/bindings"
@@ -51,8 +51,9 @@ export class NodeCreator {
       return;
     }
     let renderer = notNull(this.render);
-    let newNodeId = notNull(renderer.createNode(type as NodeType, optParentNode));
-    renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode());
+    renderer.createNode(type as NodeType, optParentNode, (newNodeId: NodeId) => {
+      renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode());
+    });
   }
 
   getNodeTypeStringFromPressedKey(key: String): NodeType | null {

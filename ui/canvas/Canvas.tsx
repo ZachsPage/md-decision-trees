@@ -40,7 +40,7 @@ export class Canvas extends React.Component {
 
   clearSelection() {
     this.renderer?.onNodeEditFinish();
-    this.nodeSelector?.setSelectedNode(null);
+    this.renderer?.onNodeSelect(null);
   }
 
   // Node text editing
@@ -61,6 +61,7 @@ export class Canvas extends React.Component {
   // File functions
   loadFile(filePath: string) {
     if (filePath.length == 0) { return; } //< Ensure not change just to clear - allows re-trigger on same name
+    this.renderer?.onNodeSelect(null);
     fromRust.getNodes(filePath)
       .catch((error) => {
         errorStore.addError(`Error reading ${filePath} - ${error}`);
@@ -89,7 +90,7 @@ export class Canvas extends React.Component {
   }
 
   componentDidMount() {
-    const defaultFile = "TEST_FILE:03_basic_encoding.md";
+    const defaultFile = "TEST_FILE:05_comparative_encoding_output.md";
     canvasStore.setFilePath(defaultFile);
   }
 

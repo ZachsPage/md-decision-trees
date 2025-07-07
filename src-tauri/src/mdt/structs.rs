@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 // TODO - may be able to leverage complex enums to do a combo Pro Con tracing to multiple nodes?
-#[derive(Serialize, Deserialize, Type, Copy, Clone)]
+#[derive(Serialize, Deserialize, Type, Copy, Clone, PartialEq, Debug)]
 pub enum NodeType { 
   Decision, Option,
   Pro, Con,
@@ -34,22 +34,36 @@ impl FromStr for NodeType {
   }
 }
 
-pub fn to_node_start_string(type_is: &NodeType) -> Result<String, ()> {
-  match type_is {
-      NodeType::Decision => Ok(String::from("D: ")), NodeType::Option => Ok(String::from("O: ")), 
-      NodeType::Pro => Ok(String::from("P: ")), NodeType::Con => Ok(String::from("C: ")), 
-      NodeType::Note=> Ok(String::from("N: "))
-  }
-}
-
 #[derive(Default, Serialize, Deserialize, Type)]
 pub struct Node {
   pub text: String,
+  pub type_is: Option<NodeType>, //< `type` is reserved, so type_is should read well...
   // Note - can't use usize here since BigInt is forbidden for bindings
   pub file_order: u32, //< To ensure re-written file is in original order
   pub level: u32, //< Level to know how many spaces to re-write since left stripped before serializing
   pub parent_idxs: Vec<u32>,
-  pub type_is: Option<NodeType> //< `type` is reserved, so type_is should read well...
+  pub parent_idxs_diff_type: Vec<u32>, //< If type_is Pro/Con, but this node is also a Con/Pro for other nodes, hold those indexes here
+}
+
+// TODO - less boiler plate way to do this in rust?
+impl Node {
+  pub fn new(
+    text: String,
+    type_is: NodeType,
+    file_order: u32,
+    level: u32,
+    parent_idxs: Vec<u32>,
+    parent_idxs_diff_type: Vec<u32>,
+  ) -> Self {
+    Node {
+      text,
+      type_is: Some(type_is),
+      file_order,
+      level,
+      parent_idxs,
+      parent_idxs_diff_type,
+    }
+  }
 }
 
 #[derive(Default, Serialize, Deserialize, Type)]
