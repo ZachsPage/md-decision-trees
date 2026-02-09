@@ -3,7 +3,7 @@ import {errorStore} from "../stores/ErrorStore"
 import {canvasStore} from "../stores/CanvasStore"
 import {Node} from "./CanvasElems"
 import {Renderer, RendererComp} from "./Render"
-import * as fromRust from "../bindings/bindings"
+import {commands, Nodes} from "../bindings/bindings"
 import {notNull} from "../Utils"
 import {NodeCreator} from "./key-handlers/NodeCreator"
 import {NodeSelector, SelectedNode} from "./key-handlers/NodeSelector"
@@ -59,23 +59,23 @@ export class Canvas extends React.Component {
   }
   
   // File functions
-  loadFile(filePath: string) {
+  async loadFile(filePath: string) {
     if (filePath.length == 0) { return; } //< Ensure not change just to clear - allows re-trigger on same name
     this.renderer?.onNodeSelect(null);
-    fromRust.getNodes(filePath)
-      .catch((error) => {
-        errorStore.addError(`Error reading ${filePath} - ${error}`);
-      })
-      .then((nodes: fromRust.Nodes | void) => {
-        if (!nodes) { errorStore.addError(`No nodes in ${filePath}?`); return; }
-        this?.renderer?.renderNodes(nodes);
-      });
+    const result = await commands.getNodes(filePath);
+    if (result.status === "error") {
+      errorStore.addError(`Error reading ${filePath} - ${result.error}`);
+      return;
+    }
+    const nodes = result.data;
+    if (!nodes) { errorStore.addError(`No nodes in ${filePath}?`); return; }
+    this?.renderer?.renderNodes(nodes);
   }
 
-  saveNodesToPath(filePath: string) {
+  async saveNodesToPath(filePath: string) {
     if (filePath.length == 0) { return; } //< Ensure not change just to clear - allows re-trigger on same name
-    let nodesToSave: fromRust.Nodes = {title: Node.collectionTitle, nodes: notNull(this.renderer).getNodes()};
-    fromRust.sendNodes(nodesToSave, filePath);
+    let nodesToSave: Nodes = {title: Node.collectionTitle, nodes: notNull(this.renderer).getNodes()};
+    await commands.sendNodes(nodesToSave, filePath);
   }
 
   // State Change Updates

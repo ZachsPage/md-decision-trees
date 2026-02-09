@@ -10,16 +10,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "1.5", features = [ "dialog-save", "dialog-open"] }
+tauri = { version = "2", features = [] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.4.0"
-specta = "1.0.5"
-tauri-specta = { version = "1.0.2", features = ["javascript", "typescript"] }
+specta = "=2.0.0-rc.20"
+specta-typescript = "0.0.7"
+tauri-specta = { version = "=2.0.0-rc.20", features = ["derive", "typescript"] }
 regex = "1.10.2"
+tauri-plugin-dialog = "2"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

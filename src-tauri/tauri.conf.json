@@ -2,44 +2,37 @@
   "build": {
     "beforeDevCommand": "pnpm dev",
     "beforeBuildCommand": "pnpm build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
   },
-  "package": {
-    "productName": "md-decision-trees",
-    "version": "0.0.0"
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png"
+    ]
   },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "dialog": {
-        "all": false,
-        "open": true,
-        "save": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "ZachsPage",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
+  "productName": "md-decision-trees",
+  "mainBinaryName": "md-decision-trees",
+  "version": "0.0.0",
+  "identifier": "ZachsPage",
+  "plugins": {},
+  "app": {
+    "withGlobalTauri": false,
     "windows": [
       {
         "fullscreen": false,
         "resizable": true,
         "title": "md-decision-trees",
         "width": 1280,
-        "height": 800
+        "height": 800,
+        "useHttpsScheme": true
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
   }
 }

@@ -3,15 +3,21 @@
 
 mod mdt;
 use mdt::cmds::{get_nodes, send_nodes};
-use specta::collect_types;
-use tauri_specta::{ts};
+use specta_typescript::Typescript;
+use tauri_specta::{collect_commands, Builder};
 
 fn main() {
-    let ts_binds_output_path = format!("{top_dir}/../ui/bindings/bindings.ts", top_dir=env!("CARGO_MANIFEST_DIR"));
-    ts::export(collect_types![get_nodes, send_nodes], ts_binds_output_path).unwrap();
+    let builder = Builder::<tauri::Wry>::new()
+        .commands(collect_commands![get_nodes, send_nodes]);
+
+    #[cfg(debug_assertions)]
+    builder
+        .export(Typescript::default(), format!("{top_dir}/../ui/bindings/bindings.ts", top_dir=env!("CARGO_MANIFEST_DIR")))
+        .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_nodes, send_nodes])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(builder.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
