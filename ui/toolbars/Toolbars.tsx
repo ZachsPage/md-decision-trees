@@ -1,8 +1,8 @@
 import "./Toolbars.css";
 import {canvasStore, CanvasStore} from "../stores/CanvasStore"
 import {errorStore} from "../stores/ErrorStore"
-import * as fromRust from "../bindings/bindings"
-import {open, save} from "@tauri-apps/api/dialog"
+import {commands, Nodes} from "../bindings/bindings"
+import {open, save} from "@tauri-apps/plugin-dialog"
 import {observer} from 'mobx-react';
 import { ViewMenu } from "./ViewMenu";
 
@@ -42,12 +42,12 @@ export const LeftToolbar : React.FC<LeftToolbarProps> = ({canvasStore}) => {
     canvasStore.setSaveNodesToFilePath(canvasStore.filePath);
   };
 
-  const createNewFile = async() => { 
+  const createNewFile = async() => {
     try {
       const filePath = await save({title: "Create New MD Decision File", filters: [{name: "mds", extensions: ['md']}]})
       if (filePath) {
-        let emptyNodes : fromRust.Nodes = {title: "", nodes: []}; //< Empty name will make Rust use the file stem
-        fromRust.sendNodes(emptyNodes, filePath);
+        let emptyNodes : Nodes = {title: "", nodes: []}; //< Empty name will make Rust use the file stem
+        await commands.sendNodes(emptyNodes, filePath);
         canvasStore.setFilePath(""); //< clear first to ensure update
         canvasStore.setFilePath(filePath); //< Load the new empty file
       }

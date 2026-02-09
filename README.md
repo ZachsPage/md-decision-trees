@@ -67,8 +67,8 @@ Errors will pop up if a creation is invalid!
 Install `pnpm`
 * Likely using `npm` first - follow [this](https://pnpm.io/installation)
 
-Run `pnpm install tauri`:
-* If package installation fails, it is likely missing packages required for Tauri (see [Prerequisites](https://v1.tauri.app/v1/guides/getting-started/prerequisites))
+Run `pnpm install`:
+* If installation fails, you may be missing Tauri v2 prerequisites (see [Prerequisites](https://v2.tauri.app/start/prerequisites/))
 
 ### Running
 
