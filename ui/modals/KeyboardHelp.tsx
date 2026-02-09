@@ -92,6 +92,11 @@ export const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ onClose }) => {
         { keyText: "h", description: "Right" },
         { keyText: "l", description: "Left" },
     ]},
+    { title: "View:", shortcuts: [
+        { keyText: "zz", description: "Center on selected node" },
+        { keyText: "Ctrl + 0", description: "Fit to view" },
+        { keyText: "Ctrl + (+/=)/(-)", description: "Zoom in/out" },
+    ]},
     { title: "Mouse", shortcuts: [
         { keyText: "right click node", description: "Node options - ex. change relationships" },
         { keyText: "scroll", description: "Zoom in/out" },

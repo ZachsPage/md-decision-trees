@@ -202,6 +202,10 @@ export class Renderer {
   renderGraph: ((nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void) | null = null;
   doubleClickNode: ((nodeId: NodeId) => void) | null = null;
   nodeBeingEdited: Element | null = null;
+  zoomIn: (() => void) | null = null;
+  zoomOut: (() => void) | null = null;
+  fitView: (() => void) | null = null;
+  focusNode: ((nodeId: NodeId) => void) | null = null;
 
   // Init
   constructor(updateSelectedNodeCB : UpdateSelectedNodeCB) {
@@ -347,7 +351,7 @@ const CustomEdgeComp = ({ sourceX, sourceY, targetX, targetY, type = 'default' }
 
 // Inner component that uses ReactFlow hooks
 const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element => {
-  const { getNode, fitView, setNodes: setReactFlowNodes } = useReactFlow();
+  const { getNode, fitView, zoomIn, zoomOut, setCenter, getZoom, setNodes: setReactFlowNodes } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
@@ -543,11 +547,9 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     );
   };
 
-  useEffect(() => {
-    if (nodes.length > 0) {
-      fitView({ padding: 0.2 }); //< re-fit now that we have nodes - TODO this happens each traversal as well...
-    }
-  }, [nodes, fitView]);
+  useEffect(() => { // re-fit when the number of nodes change
+    if (nodes.length > 0) { fitView({ padding: 0.2 }); }
+  }, [nodes.length]);
 
   // Internal reactflow callback - used to catch node clicks to select
   const onSelectionChange = useCallback(({ nodes }: { nodes: FlowNode[] }) => {
@@ -569,11 +571,22 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   // Set up the callbacks in the renderer
   useEffect(() => {
     renderer.backendCBs.updateSelection = updateSelection;
-  }, [renderer, updateSelection]);
+    renderer.zoomIn = () => zoomIn();
+    renderer.zoomOut = () => zoomOut();
+    renderer.fitView = () => fitView({ padding: 0.2 });
+    renderer.focusNode = (nodeId: NodeId) => {
+      const node = getNode(nodeId);
+      if (node) {
+        const x = node.position.x + (node.width ?? 0) / 2;
+        const y = node.position.y + (node.height ?? 0) / 2;
+        setCenter(x, y, { zoom: getZoom(), duration: 300 });
+      }
+    };
+  }, [renderer, updateSelection, zoomIn, zoomOut]);
 
   return (
     <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
-      <ReactFlow fitView defaultEdgeOptions={{animated: false}}
+      <ReactFlow fitView defaultEdgeOptions={{animated: false}} minZoom={0.01} maxZoom={10}
         nodes={nodesWithHandlers} edges={edges}
         onNodesChange={onNodesChange}
         onSelectionChange={onSelectionChange}

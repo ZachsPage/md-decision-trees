@@ -17,6 +17,7 @@ export class Canvas extends React.Component {
   renderer: Renderer = new Renderer( (node: SelectedNode) => {this?.nodeSelector?.setSelectedNode(node);});
   nodeCreator: NodeCreator = new NodeCreator(this, this.renderer);
   nodeSelector: NodeSelector = new NodeSelector(this.renderer);
+  lastKey: string = '';
   getSelectedNode() : SelectedNode | null | undefined { return this?.nodeSelector?.current(); }
 
   // Mouse / keyboard Events
@@ -26,10 +27,30 @@ export class Canvas extends React.Component {
     const editKeyPressed : boolean = (event.ctrlKey && event.key === 'e');
     if (this.handleNodeTextEdit(editKeyPressed, escPressed)) { return; } //< If editing, ensure text keys are not used
     if (escPressed) { this.clearSelection(); }
+    // "zz" sequence - focus on selected node
+    if (!event.ctrlKey && event.key === 'z') {
+      if (this.lastKey === 'z' && this.getSelectedNode()) {
+        this.renderer?.focusNode?.(notNull(this.getSelectedNode()).renderID);
+        this.lastKey = '';
+        return;
+      }
+      this.lastKey = 'z';
+      return;
+    }
+    this.lastKey = event.key;
     if (this?.nodeCreator?.handleKeyEvent(event) || this?.nodeSelector?.handleKeyEvent(event)) { return; }
     if (event.ctrlKey) {
       if (event.key === 'z') {
         this.renderer?.doLayout();
+      } else if (event.key === '=' || event.key === '+') {
+        event.preventDefault();
+        this.renderer?.zoomIn?.();
+      } else if (event.key === '-') {
+        event.preventDefault();
+        this.renderer?.zoomOut?.();
+      } else if (event.key === '0') {
+        event.preventDefault();
+        this.renderer?.fitView?.();
       } else if (event.key === 'd' && this.getSelectedNode()) {
         this.renderer?.removeNode(notNull(this.getSelectedNode()).renderID);
       } else if (event.key === 's') {
@@ -95,8 +116,8 @@ export class Canvas extends React.Component {
   }
 
   render() {
-    return <>
+    return <div className="canvas">
       <RendererComp renderer={this.renderer}/>
-    </>
+    </div>
   }
 }
