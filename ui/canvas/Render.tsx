@@ -80,8 +80,10 @@ export class Renderer {
       type_is: type,
       parent_idxs_diff_type: [] //< TODO
     };
-    let newNodeID = this.renderNode(newNode, parent ? [parent.renderID] : [], []);
-    this.doLayout(cb ? () => { cb(newNodeID); } : undefined);
+    const nodes = [...this._getNodes()];
+    const edges = [...this._getEdges()];
+    const newNodeID = this._buildRenderNode(newNode, parent ? [parent.renderID] : [], [], nodes, edges);
+    this.doLayout(nodes, edges, cb ? () => { cb(newNodeID); } : undefined);
     return newNodeID;
   }
 
@@ -92,23 +94,25 @@ export class Renderer {
     const parentToSelectId = parentIds.length > 0 ? parentIds[0] : "0";
     // Need to remove from the graph (will also remove edges), but also remove them on our end
     nodesToRemove.forEach(nodeID => { this.graph.removeNode(nodeID); });
-    this.nodes = this.nodes.filter(node => !nodesToRemove.includes(node.id));
-    this.edges = this.edges.filter(edge => {
-      return !nodesToRemove.includes(edge.source) && !nodesToRemove.includes(edge.target);
-    });
-    this.doLayout(() => { this.onNodeSelect(parentToSelectId); });
+    const nodes = this._getNodes().filter(node => !nodesToRemove.includes(node.id));
+    const edges = this._getEdges().filter(edge =>
+      !nodesToRemove.includes(edge.source) && !nodesToRemove.includes(edge.target)
+    );
+    this.doLayout(nodes, edges, () => { this.onNodeSelect(parentToSelectId); });
   }
 
   getNodes(): fromRust.Node[] {
     // Get the nodes in DFS order since this should match the files layout
+    const allNodes = this._getNodes();
+    const allEdges = this._getEdges();
     const nodeIds = new DFS([], this).visitedNodes;
     const idToFileOrder = new Map<string, number>();
     nodeIds.forEach((id, index) => idToFileOrder.set(id, index));
     // Set parent_idxs & parent_idxs_diff_type
     // - Doing it now avoids complexity of keeping them aligned with the UI while doing creates / deletes
     return nodeIds.map(id => {
-      const dataNode = notNull(this.nodes.find(n => n.id === id)).data.dataNode;
-      const incomingEdges = this.edges.filter(edge => edge.target === id);
+      const dataNode = notNull(allNodes.find(n => n.id === id)).data.dataNode;
+      const incomingEdges = allEdges.filter(edge => edge.target === id);
       const isPro = (dataNode.type_is === "Pro"), isCon = (dataNode.type_is === "Con");
       const typeMatchEdgeNNode = (edge: FlowEdge) => {
         if (!isPro && !isCon) {
@@ -126,17 +130,17 @@ export class Renderer {
   // Render functions
   renderNodes(nodes : fromRust.Nodes): void {
     this._setUpGraph();
-    this.nodes = [];
-    this.edges = [];
     this.nextNodeID = 0; //< Reset to align with parentIDs
     Node.newCollection(nodes.title);
-    nodes.nodes.forEach((node: fromRust.Node) => { 
+    const newNodes: FlowNode[] = [];
+    const newEdges: FlowEdge[] = [];
+    nodes.nodes.forEach((node: fromRust.Node) => {
       const parentIDs = node.parent_idxs.map(id => id.toString());
       const diffTypePars = node.parent_idxs_diff_type;
       const diffTypeParentIDs = diffTypePars && diffTypePars.length > 0 ? diffTypePars.map(id => id.toString()) : [];
-      this.renderNode(node, parentIDs, diffTypeParentIDs); 
+      this._buildRenderNode(node, parentIDs, diffTypeParentIDs, newNodes, newEdges);
     });
-    this.doLayout();
+    this.doLayout(newNodes, newEdges);
   }
 
   // Helper function to create an edge object
@@ -150,10 +154,11 @@ export class Renderer {
     };
   }
 
-  renderNode(newNode: fromRust.Node, parentIDs: string[], diffTypeParentIDs: string[]): NodeId {
+  // Builds a node+edges into the provided arrays — used by both bulk (renderNodes) and single (createNode) paths
+  _buildRenderNode(newNode: fromRust.Node, parentIDs: string[], diffTypeParentIDs: string[], nodes: FlowNode[], edges: FlowEdge[]): NodeId {
     const newCanvasNode = {
       id: this.nextNodeID.toString(),
-      data: { 
+      data: {
         label: newNode.text,
         dataNode: newNode,
       },
@@ -161,12 +166,12 @@ export class Renderer {
       position: { x: 0, y: 0 },
       type: 'customNodeComp', // Must align with field name in nodeTypes
     }
-    this.nodes.push(newCanvasNode);
+    nodes.push(newCanvasNode);
     ++this.nextNodeID;
     const childNodeID = notNull(newCanvasNode.id);
     const edgeType = newNode.type_is == "Pro" ? "pro" : newNode.type_is == "Con" ? "con" : "default"
     const addNewEdge = (parentID: string, edgeType: string) => {
-      this.edges.push(this.createEdge(parentID, childNodeID, edgeType as 'pro' | 'con' | 'default'));
+      edges.push(this.createEdge(parentID, childNodeID, edgeType as 'pro' | 'con' | 'default'));
     };
     parentIDs.forEach(parentID => addNewEdge(parentID, edgeType));
     if (edgeType != "default") {
@@ -175,21 +180,24 @@ export class Renderer {
     return newCanvasNode.id;
   }
 
-  doLayout(cb?: Callback): void {
-    this.nodes.forEach(node => { 
+  // nodes/edges are optional — falls back to reading current ReactFlow state via callbacks
+  doLayout(nodes?: FlowNode[], edges?: FlowEdge[], cb?: Callback): void {
+    const n = nodes ?? this._getNodes();
+    const e = edges ?? this._getEdges();
+    n.forEach(node => {
       // TODO: This works okay but not great - may need to switch to a different layout library like elkjs
       const textDim = getTextDimensions(node.data.label, 50, 190);
-      this.graph.setNode(node.id, {...node, ...textDim}); 
+      this.graph.setNode(node.id, {...node, ...textDim});
     });
-    this.edges.forEach(edge => { this.graph.setEdge(edge.source, edge.target); });
+    e.forEach(edge => { this.graph.setEdge(edge.source, edge.target); });
     dagre.layout(this.graph);
-    this.nodes.forEach(node => {
+    const updatedNodes = n.map(node => {
       const nodeWithPosition = this.graph.node(node.id);
-      if (nodeWithPosition) {
-        node.position = {x: nodeWithPosition.x, y: nodeWithPosition.y}
-      }
+      return nodeWithPosition
+        ? {...node, position: {x: nodeWithPosition.x, y: nodeWithPosition.y}}
+        : node;
     });
-    this._rerenderNodes(cb);
+    this._callRenderGraph(updatedNodes, e, cb);
   }
 
   // Members
@@ -197,21 +205,20 @@ export class Renderer {
   updateSelectedNodeCB: UpdateSelectedNodeCB | null = null;
   backendCBs: BackendCBs = new BackendCBs();
   nextNodeID: number = 0;
-  nodes: FlowNode[] = [];
-  edges: FlowEdge[] = [];
-  renderGraph: ((nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void) | null = null;
   doubleClickNode: ((nodeId: NodeId) => void) | null = null;
   nodeBeingEdited: Element | null = null;
   zoomIn: (() => void) | null = null;
   zoomOut: (() => void) | null = null;
   fitView: (() => void) | null = null;
   focusNode: ((nodeId: NodeId) => void) | null = null;
+  getNodesFcn: (() => FlowNode[]) | null = null;
+  getEdgesFcn: (() => FlowEdge[]) | null = null;
+  renderGraphFcn: ((nodes: FlowNode[], edges: FlowEdge[], cb?: Callback) => void) | null = null;
 
   // Init
   constructor(updateSelectedNodeCB : UpdateSelectedNodeCB) {
     this.updateSelectedNodeCB = updateSelectedNodeCB;
     this._setUpGraph();
-    this.doLayout();
   }
 
   _setUpGraph(): void {
@@ -220,25 +227,33 @@ export class Renderer {
     this.graph.setGraph({rankdir: "TB", ranksep: 100, nodesep: 200});
   }
 
-  setRenderGraphFcn(renderGraph: (nodes: FlowNode[], edges: FlowEdge[], callback?: () => void) => void): void { 
-    this.renderGraph = renderGraph; 
+  _getNodes(): FlowNode[] { return this.getNodesFcn ? this.getNodesFcn() : []; }
+  _getEdges(): FlowEdge[] { return this.getEdgesFcn ? this.getEdgesFcn() : []; }
+
+  _callRenderGraph(nodes: FlowNode[], edges: FlowEdge[], cb?: Callback): void {
+    if (this.renderGraphFcn) { this.renderGraphFcn(nodes, edges, cb); }
   }
   
   setDoubleClickNodeFcn(doubleClickNode: (nodeId: NodeId) => void): void { 
     this.doubleClickNode = doubleClickNode; 
   }
   
-  _rerenderNodes(cb?: Callback): void {
-    if (this.renderGraph) {
-      this.renderGraph(this.nodes, this.edges, cb);
-    }
+  // Called by RendererCompInner to wire up ReactFlow state access
+  setStateFunctions(
+    getNodes: () => FlowNode[],
+    getEdges: () => FlowEdge[],
+    renderGraph: (nodes: FlowNode[], edges: FlowEdge[], cb?: Callback) => void
+  ): void {
+    this.getNodesFcn = getNodes;
+    this.getEdgesFcn = getEdges;
+    this.renderGraphFcn = renderGraph;
   }
 
   // User interaction functions
   onNodeSelect(selectedNodeId: NodeId | null, cb?: Callback, fromBackend: boolean = false): void {
     let selectedNode = null as SelectedNode | null;
     if (selectedNodeId) {
-      const node = this.nodes.find(node => node.id === selectedNodeId);
+      const node = this._getNodes().find(node => node.id === selectedNodeId);
       if (node) {
         selectedNode = new SelectedNode(node.data.dataNode, node.id);
       }
@@ -356,6 +371,11 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  // Refs give Renderer synchronous read access to ReactFlow state without coupling to hooks
+  const nodesRef = useRef<FlowNode[]>([]);
+  const edgesRef = useRef<FlowEdge[]>([]);
+  nodesRef.current = nodes;
+  edgesRef.current = edges;
   // Custom node / edge types
   const nodeTypes = useMemo(() => ({ customNodeComp: CustomNodeComp }), []);
   const edgeTypes = useMemo(() => ({
@@ -397,16 +417,23 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   const onNodesChange = useCallback((changes: NodeChange[]): void => {
     setNodes((changedNodes) => applyNodeChanges(changes, changedNodes));
   }, [setNodes]);
-  
-  renderer.setRenderGraphFcn( async (tmpNodes: FlowNode[], tmpEdges: FlowEdge[], renderedCB: (() => void) | undefined): Promise<void> => { 
-    setNodes([...tmpNodes]); 
-    setEdges([...tmpEdges]); // Copy to force re-render, or new edges from createNode wont show up
-    if (renderedCB) { // Waits for re-render to finish before calling the callback
-      // - Used to ensure the node element is available before caller uses something like onNodeEdit
-      await new Promise(resolve => setTimeout(resolve));
-      renderedCB();
-    }
-  });
+
+  // Wire up ReactFlow state access to Renderer
+  useEffect(() => {
+    renderer.setStateFunctions(
+      () => nodesRef.current,
+      () => edgesRef.current,
+      async (newNodes: FlowNode[], newEdges: FlowEdge[], renderedCB?: Callback) => {
+        setNodes([...newNodes]);
+        setEdges([...newEdges]); // Copy to force re-render, or new edges from createNode wont show up
+        if (renderedCB) { // Waits for re-render to finish before calling the callback
+          // - Used to ensure the node element is available before caller uses something like onNodeEdit
+          await new Promise(resolve => setTimeout(resolve));
+          renderedCB();
+        }
+      }
+    );
+  }, [renderer]);
 
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: FlowNode) => {
     // Prevent the default context menu
@@ -486,15 +513,15 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
     handleMakeRelationFor('con');
   }, [handleMakeRelationFor]);
 
+  // If a node gains edges of mixed types, mark it as comparative — mutates nodesRef so doLayout sees it
   function maybeUpdateNodeToComparative(nodeId: string) {
-    const connectedEdges = renderer.edges.filter(edge => edge.target === nodeId);
+    const connectedEdges = edgesRef.current.filter(edge => edge.target === nodeId);
     if (connectedEdges.length >= 2) { // If node has multiple edges, check if they have different types
-      const edgeTypes = new Set(connectedEdges.map(edge => edge.type));
-      if (edgeTypes.size > 1) { // Node has different types of edges, update its style
-        const nodeIndex = renderer.nodes.findIndex(n => n.id === nodeId);
-        if (nodeIndex !== -1) {
-          renderer.nodes[nodeIndex].className = 'node-comparative';
-        }
+      const types = new Set(connectedEdges.map(edge => edge.type));
+      if (types.size > 1) { // Node has different types of edges, update its style
+        nodesRef.current = nodesRef.current.map(n =>
+          n.id === nodeId ? {...n, className: 'node-comparative'} : n
+        );
       }
     }
   }
@@ -502,14 +529,13 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   const onNodeClick = useCallback((event: React.MouseEvent, node: FlowNode) => {
     if (edgeCreation.active) { // clicked node - complete edge creation
       const newEdge = renderer.createEdge(node.id, edgeCreation.sourceNodeId, edgeCreation.targetType);
-      setEdges((eds) => [...eds, newEdge]);
-      renderer.edges.push(newEdge);
+      edgesRef.current = [...edgesRef.current, newEdge];
       maybeUpdateNodeToComparative(edgeCreation.sourceNodeId);
-      renderer.doLayout();
+      renderer.doLayout(nodesRef.current, edgesRef.current);
       setEdgeCreation(defaultEdgeCreationState);
       event.stopPropagation(); //< Prevent the default node click behavior
     }
-  }, [edgeCreation, setEdges, renderer]);
+  }, [edgeCreation, renderer]);
 
   const renderTemporaryEdge = () => {
     if (!edgeCreation.active || !edgeCreation.mousePosition) return null;

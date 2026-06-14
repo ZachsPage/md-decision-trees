@@ -89,26 +89,31 @@ Here is a list of in order milestones to guide this project:
   * When loading a new file, the layout is really bad - something is not being cleaned up correctly - done
   * Start file from scratch, make D, O, O, P, right click make it a con for the other O, does not save? - done
   * With comparative nodes, sometimes stops being able to select some child nodes - done
-    * Fix the traverser bug - ex. `05_comparative_encoding_output.md`
+  * Fix the traverser bug - ex. `05_comparative_encoding_output.md` - done
+  * Bug around traverser lifetime when deleting entire tree
+* Update from TauriV1 to TauriV2 - done
+* Support multi-line entries - done
 * Optimize re-renders:
   * Mouse dragging the nodes around, then using hjkl to navigate resets the layout - same with editing - done
   * Double click to select the node as the root traverser, instead of only supporting hjkl - done
-  * When creating a new node, all nodes reset their positions:
-    * Avoid re-render of everything when creating new node? Or better to restore all node positions?
-* The node layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
-* Update delete / remove to only totally delete nodes when last parent was removed
-* Bug around traverser lifetime when deleting entire tree
-* Fix zooming so that it auto adjusts to maximimze the number of nodes shown as well as focusing on what is being edited
-* Store program state for user to re-open last used file?
-* Slider to collapse based on type (doesn't affect file content)
+* Stop all nodes from resetting their positions when a new node is created - just do its parent & down?
 * Undo / redo for text & node manipulation
-* Update from TauriV1 to TauriV2
-* Support multi-line entries
-* Pop-up to confirm deletion
+* Update delete / remove to only totally delete nodes when last parent was removed
+* Node layout
+    * The node layout overall seems bad - maybe better way to deal with it? Switch to elkjs maybe?
+    * Store some sort of layout metadata in the file? 
+        * Moving nodes around could make ideas more clear, like clustering... is this a side-effect of the layout being bad overall?
+        * But would be good for presentations or something... could be worth it
+        * Maybe consider other metadata as well - like "view" or something... support an expandible format
+    * Fix zooming so that it auto adjusts to maximize the number of nodes shown as well as focusing on what is being edited
+* Slider to collapse based on type (doesn't affect file content)
+* Make node text node collapsible (only show partial text)
+* Make nodes resizable & the text wrapping better
+* Pop-up to confirm deletion - probably covered by undo / redo
 * Option to create nodes as parents instead - ctrl+c, ctrl+p, then d o n 
   * Or, maybe do ctrl+j to create down & ctrl+k to create up?
-* Make node text node collapsible (only show partial text)
 * Bundling
+* Store program state for user to re-open last used file?
 * Replace quick file opener with a file explorer in the left toolbar (program arg for root dir, only show `*.md` files)
 * Create nodes that can link to other files
 
