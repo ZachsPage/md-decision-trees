@@ -84,6 +84,8 @@ export const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ onClose }) => {
         { keyText: "Ctrl + m, <letter from 'NodeTypes' section>", description: "Make new node" },
         { keyText: "Ctrl + e", description: "Edit (re-press to save)" },
         { keyText: "Ctrl + d", description: "Delete currently selected node & children" },
+        { keyText: "Ctrl + z", description: "Undo" },
+        { keyText: "Ctrl + Shift + z", description: "Redo" },
     ]},
     { title: "Navigation:", grid: true, shortcuts: [
         { keyText: "esc", description: "Clear selection" },

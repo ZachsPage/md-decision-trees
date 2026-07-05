@@ -19,6 +19,48 @@ export class Canvas extends React.Component {
   nodeSelector: NodeSelector = new NodeSelector(this.renderer);
   lastKey: string = '';
   getSelectedNode() : SelectedNode | null | undefined { return this?.nodeSelector?.current(); }
+  private static readonly MAX_UNDO_STACK = 50;
+  undoStack: Nodes[] = [];
+  redoStack: Nodes[] = [];
+
+  captureSnapshot(): void {
+    this.undoStack.push(this.currentSnapshot());
+    if (this.undoStack.length > Canvas.MAX_UNDO_STACK) { this.undoStack.shift(); }
+    this.redoStack = [];
+  }
+
+  private currentSnapshot(): Nodes {
+    return JSON.parse(JSON.stringify({ title: Node.collectionTitle, nodes: notNull(this.renderer).getNodes() }));
+  }
+
+  performUndo(): void {
+    if (this.undoStack.length === 0) { return; }
+    const selectedDFSIdx = this.getSelectedDFSIdx();
+    this.redoStack.push(this.currentSnapshot());
+    const snapshot = this.undoStack.pop()!;
+    this.renderer.onNodeSelect(null);
+    this.renderer.renderNodes(snapshot, () => this.reSelectAfterRestore(selectedDFSIdx, snapshot.nodes.length));
+  }
+
+  performRedo(): void {
+    if (this.redoStack.length === 0) { return; }
+    const selectedDFSIdx = this.getSelectedDFSIdx();
+    this.undoStack.push(this.currentSnapshot());
+    const snapshot = this.redoStack.pop()!;
+    this.renderer.onNodeSelect(null);
+    this.renderer.renderNodes(snapshot, () => this.reSelectAfterRestore(selectedDFSIdx, snapshot.nodes.length));
+  }
+
+  private getSelectedDFSIdx(): number {
+    const sel = this.getSelectedNode();
+    return sel ? this.renderer.getNodeDFSIndex(sel.renderID) : -1;
+  }
+
+  private reSelectAfterRestore(dfsIdx: number, nodeCount: number): void {
+    if (dfsIdx >= 0 && dfsIdx < nodeCount) {
+      this.renderer.onNodeSelect(dfsIdx.toString());
+    }
+  }
 
   // Mouse / keyboard Events
   // - Ensures state control using delegation as opposed to propagating state & allowing each component to register
@@ -40,8 +82,10 @@ export class Canvas extends React.Component {
     this.lastKey = event.key;
     if (this?.nodeCreator?.handleKeyEvent(event) || this?.nodeSelector?.handleKeyEvent(event)) { return; }
     if (event.ctrlKey) {
-      if (event.key === 'z') {
-        this.renderer?.doLayout();
+      if (event.key === 'Z') {
+        this.performRedo();
+      } else if (event.key === 'z') {
+        this.performUndo();
       } else if (event.key === '=' || event.key === '+') {
         event.preventDefault();
         this.renderer?.zoomIn?.();
@@ -52,6 +96,7 @@ export class Canvas extends React.Component {
         event.preventDefault();
         this.renderer?.fitView?.();
       } else if (event.key === 'd' && this.getSelectedNode()) {
+        this.captureSnapshot();
         this.renderer?.removeNode(notNull(this.getSelectedNode()).renderID);
       } else if (event.key === 's') {
         this.saveNodesToPath(canvasStore.filePath);
@@ -83,6 +128,9 @@ export class Canvas extends React.Component {
   async loadFile(filePath: string) {
     if (filePath.length == 0) { return; } //< Ensure not change just to clear - allows re-trigger on same name
     this.renderer?.onNodeSelect(null);
+    this.undoStack = [];
+    this.redoStack = [];
+    this?.renderer?.renderNodes({title: "", nodes: []}); //< Wipe display before async read so stale state never persists
     const result = await commands.getNodes(filePath);
     if (result.status === "error") {
       errorStore.addError(`Error reading ${filePath} - ${result.error}`);
@@ -102,6 +150,7 @@ export class Canvas extends React.Component {
   // State Change Updates
   constructor(props: any) {
     super(props);
+    this.renderer.captureSnapshotCB = () => this.captureSnapshot();
     // Bind reactions to store value changes
     reaction(() => canvasStore.filePath, newFilePath => { this.loadFile(newFilePath); })
     reaction(() => canvasStore.saveNodesToFilePath, filePath => { this.saveNodesToPath(filePath); })
