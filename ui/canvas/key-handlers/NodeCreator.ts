@@ -69,8 +69,10 @@ export class NodeCreator {
   canMakeTypeOnParent(parentType: NodeType | null | undefined, newType: NodeType): Boolean {
     if (newType == "Note") { return true; }
     if (!parentType) { return newType == "Decision"; }
-    if (parentType == "Decision") { return newType == "Option"; }
-    if (parentType == "Option") { return newType == "Pro" || newType == "Con"; }
+    if (parentType == "Decision") { return newType == "Decision" || newType == "Option"; }
+    if (parentType == "Option") { 
+        return newType == "Decision" || newType == "Pro" || newType == "Con";
+    }
     return false;
   }
 };
