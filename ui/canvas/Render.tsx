@@ -128,7 +128,7 @@ export class Renderer {
   }
 
   // Render functions
-  renderNodes(nodes : fromRust.Nodes): void {
+  renderNodes(nodes : fromRust.Nodes, cb?: Callback): void {
     this._setUpGraph();
     this.nextNodeID = 0; //< Reset to align with parentIDs
     Node.newCollection(nodes.title);
@@ -140,7 +140,11 @@ export class Renderer {
       const diffTypeParentIDs = diffTypePars && diffTypePars.length > 0 ? diffTypePars.map(id => id.toString()) : [];
       this._buildRenderNode(node, parentIDs, diffTypeParentIDs, newNodes, newEdges);
     });
-    this.doLayout(newNodes, newEdges);
+    this.doLayout(newNodes, newEdges, cb);
+  }
+
+  getNodeDFSIndex(renderID: NodeId): number {
+    return new DFS([], this).visitedNodes.indexOf(renderID);
   }
 
   // Helper function to create an edge object
@@ -211,6 +215,7 @@ export class Renderer {
   zoomOut: (() => void) | null = null;
   fitView: (() => void) | null = null;
   focusNode: ((nodeId: NodeId) => void) | null = null;
+  captureSnapshotCB: (() => void) | null = null;
   getNodesFcn: (() => FlowNode[]) | null = null;
   getEdgesFcn: (() => FlowEdge[]) | null = null;
   renderGraphFcn: ((nodes: FlowNode[], edges: FlowEdge[], cb?: Callback) => void) | null = null;
@@ -404,6 +409,7 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
   
   // Update initialNodes to include the text change handler
   const onNodeTextChange = useCallback((changedNodeId: NodeId, newText: string): void => {
+    renderer.captureSnapshotCB?.();
     setNodes((changedNodes) => changedNodes?.map((node) => {
       if (node.id === changedNodeId) {
         node.data.label = newText;
@@ -411,7 +417,7 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
       }
       return node;
     }));
-  }, [setNodes]);
+  }, [setNodes, renderer]);
   const nodesWithHandlers = nodes?.map(node => {node.data.onTextChange = onNodeTextChange; return node;});
 
   const onNodesChange = useCallback((changes: NodeChange[]): void => {
@@ -528,6 +534,7 @@ const RendererCompInner = ({ renderer }: { renderer: Renderer }): JSX.Element =>
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: FlowNode) => {
     if (edgeCreation.active) { // clicked node - complete edge creation
+      renderer.captureSnapshotCB?.();
       const newEdge = renderer.createEdge(node.id, edgeCreation.sourceNodeId, edgeCreation.targetType);
       edgesRef.current = [...edgesRef.current, newEdge];
       maybeUpdateNodeToComparative(edgeCreation.sourceNodeId);

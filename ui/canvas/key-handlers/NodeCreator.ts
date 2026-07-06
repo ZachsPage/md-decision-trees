@@ -50,6 +50,7 @@ export class NodeCreator {
       errorStore.addError(`Cannot make node type '${type}' on parent node type '${parentTypeStr}'`);
       return;
     }
+    this.canvas?.captureSnapshot();
     let renderer = notNull(this.render);
     renderer.createNode(type as NodeType, optParentNode, (newNodeId: NodeId) => {
       renderer.onNodeSelect(newNodeId, () => this.canvas?.editSelectedNode());
