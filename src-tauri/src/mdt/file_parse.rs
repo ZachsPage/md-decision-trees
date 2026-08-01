@@ -12,6 +12,36 @@ pub const NUM_SPACES_PER_LEVEL: u32 = 2;
 
 pub const REQUIRED_HEADER: &str = "(md-decision-trees)";
 
+/// Node text is stored one-per-line, so escape backslashes / literal newlines (e.g. from
+/// multi-line edits in the UI) into a literal "\n" - keeps each node on a single file line
+pub fn escape_node_text(text: &str) -> String {
+  let mut escaped = String::with_capacity(text.len());
+  for c in text.chars() {
+    match c {
+      '\\' => escaped.push_str("\\\\"),
+      '\n' => escaped.push_str("\\n"),
+      _ => escaped.push(c),
+    }
+  }
+  return escaped;
+}
+
+/// Reverse of escape_node_text - restores literal newlines when a file is read back in
+pub fn unescape_node_text(text: &str) -> String {
+  let mut unescaped = String::with_capacity(text.len());
+  let mut chars = text.chars();
+  while let Some(c) = chars.next() {
+    if c != '\\' { unescaped.push(c); continue; }
+    match chars.next() {
+      Some('n') => unescaped.push('\n'),
+      Some('\\') => unescaped.push('\\'),
+      Some(other) => { unescaped.push('\\'); unescaped.push(other); },
+      None => unescaped.push('\\'),
+    }
+  }
+  return unescaped;
+}
+
 // For non-const statics
 lazy_static! {
   pub static ref DATA_DIR: PathBuf = PathBuf::from(format!("{top_dir}/test/data", top_dir=env!("CARGO_MANIFEST_DIR")));

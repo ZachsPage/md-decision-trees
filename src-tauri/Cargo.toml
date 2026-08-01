@@ -22,6 +22,7 @@ specta-typescript = "0.0.7"
 tauri-specta = { version = "=2.0.0-rc.20", features = ["derive", "typescript"] }
 regex = "1.10.2"
 tauri-plugin-dialog = "2"
+tauri-plugin-store = "2"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

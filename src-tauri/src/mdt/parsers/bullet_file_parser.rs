@@ -1,6 +1,6 @@
 pub mod bullet_file_parser {
 
-use super::file_parse::{NUM_SPACES_PER_LEVEL};
+use super::file_parse::{NUM_SPACES_PER_LEVEL, unescape_node_text};
 use super::structs::{Node, NodeType};
 use std::collections::VecDeque;
 use lazy_static::lazy_static;
@@ -71,6 +71,7 @@ impl BulletFileParser {
     } else {
       new_node.text = text.to_string();
     }
+    new_node.text = unescape_node_text(&new_node.text);
     // A file will have the nodes in DFS order. So can pop through the potential parent queue until we find our current
     // parent. So if its not the current nodes parent, can remove it since it wont be future node's parent either.
     while !self.parent_q.is_empty() {

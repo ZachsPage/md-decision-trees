@@ -7,6 +7,7 @@ import {commands, Nodes} from "../bindings/bindings"
 import {notNull} from "../Utils"
 import {NodeCreator} from "./key-handlers/NodeCreator"
 import {NodeSelector, SelectedNode} from "./key-handlers/NodeSelector"
+import {getLastOpenedFile} from "../stores/PersistedSettings"
 import {observer} from 'mobx-react';
 import {reaction} from 'mobx';
 import React from 'react';
@@ -159,8 +160,16 @@ export class Canvas extends React.Component {
     document.addEventListener('keydown', (event) => {this.delegateKeyEvent(event)});
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const defaultFile = "TEST_FILE:05_comparative_encoding_output.md";
+    const lastOpenedFile = await getLastOpenedFile();
+    if (lastOpenedFile) {
+      const result = await commands.getNodes(lastOpenedFile);
+      if (result.status === "ok" && result.data) {
+        canvasStore.setFilePath(lastOpenedFile);
+        return;
+      }
+    }
     canvasStore.setFilePath(defaultFile);
   }
 
