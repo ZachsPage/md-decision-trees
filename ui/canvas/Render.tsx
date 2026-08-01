@@ -1,6 +1,6 @@
 import {Node} from "./CanvasElems"
 import {notNull} from "../Utils"
-import {useCallback, useState, useMemo, useRef, useEffect} from 'react';
+import {useCallback, useState, useMemo, useRef, useEffect, useLayoutEffect} from 'react';
 import dagre from 'dagre';
 import ReactFlow, { 
   Node as FlowNode,
@@ -302,8 +302,19 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
   const isSelected = getNode(id)?.selected;
   
   useEffect(() => { setText(data.label);}, [data.label]);
-  
-  const handleDoubleClick = useCallback(async () => { 
+
+  const resizeTextarea = useCallback(() => { // Grow text area to fit its text
+    let thisHTML = notNull(htmlRef.current);
+    // https://stackoverflow.com/questions/76048428/html-textarea-why-does-textarea-style-height-textarea-scrollheight-px-exp
+    if (thisHTML.scrollHeight > thisHTML.clientHeight) {
+      thisHTML.style.height = thisHTML.scrollHeight + "px";
+    }
+  }, []);
+  // Resize as soon as the text area mounts, else it starts at its default rows / height until the
+  // user types a character (onChange resize below), showing wrong size text on the edit transition
+  useLayoutEffect(() => { if (isEditing) { resizeTextarea(); } }, [isEditing, resizeTextarea]);
+
+  const handleDoubleClick = useCallback(async () => {
     setIsEditing(true); 
     await new Promise(resolve => setTimeout(resolve));
     const textElem = htmlRef?.current as HTMLTextAreaElement | null;
@@ -336,11 +347,7 @@ function CustomNodeComp({ data, id }: NodeProps): JSX.Element {
           className="node-textarea"
           onChange={(e) => { // Set text and resize to show all text
             setText(e.target.value)
-            let thisHTML = notNull(htmlRef.current);
-            // https://stackoverflow.com/questions/76048428/html-textarea-why-does-textarea-style-height-textarea-scrollheight-px-exp
-            if (thisHTML.scrollHeight > thisHTML.clientHeight) {
-              thisHTML.style.height = thisHTML.scrollHeight + "px";
-            }
+            resizeTextarea();
           }}
         />}
       <Handle type="source" position={Position.Bottom} />

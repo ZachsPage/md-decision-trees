@@ -1,4 +1,5 @@
 import {makeObservable, observable, action} from 'mobx';
+import {setLastOpenedFile} from './PersistedSettings';
 
 export class CanvasStore {
   filePath: string = ""
@@ -18,6 +19,7 @@ export class CanvasStore {
 
   setFilePath = (newFilePath: string) => {
     this.filePath = newFilePath;
+    if (newFilePath.length > 0 && !newFilePath.startsWith("TEST_FILE:")) { setLastOpenedFile(newFilePath); }
   }
 
   setSaveNodesToFilePath = (newFilePath: string) => {

@@ -1,7 +1,7 @@
 pub mod file_write {
 
 use super::structs::{Nodes, Node, NodeType};
-use super::file_parse::{NUM_SPACES_PER_LEVEL, REQUIRED_HEADER};
+use super::file_parse::{NUM_SPACES_PER_LEVEL, REQUIRED_HEADER, escape_node_text};
 use std::path::PathBuf;
 use std::error::Error;
 use std::fs::File;
@@ -86,7 +86,7 @@ pub fn write_nodes_to_file(nodes: Nodes, file_path: PathBuf) -> Result<(), Box<d
       add_opt_node_type(&mut prefix, &node);
     }
     writer.write(prefix.as_bytes())?;
-    writer.write(node.text.as_bytes())?;
+    writer.write(escape_node_text(&node.text).as_bytes())?;
   }
   return Ok(());
 }
@@ -95,7 +95,32 @@ pub fn write_nodes_to_file(nodes: Nodes, file_path: PathBuf) -> Result<(), Box<d
 mod tests {
     use super::*;
     use std::fs;
-    use crate::mdt::file_parse::DATA_DIR;
+    use crate::mdt::file_parse::{DATA_DIR, parse_file};
+
+    #[test]
+    fn test_multiline_node_text_round_trip() {
+        // A node with an embedded newline (e.g. from a multi-line edit in the UI) and a literal
+        // backslash must stay on a single file line, and come back unchanged after re-parsing
+        let output_file_path = DATA_DIR.join("06_multiline_text_output.md");
+        let multiline_text = "Line one\nLine two\\Line three".to_string();
+        let nodes = vec![Node::new(multiline_text.clone(), NodeType::Decision, 0, 0, vec![], vec![])];
+        let nodes = Nodes {title: String::new(), nodes: nodes};
+
+        let write_res = write_nodes_to_file(nodes, output_file_path.clone());
+        assert!(write_res.is_ok());
+
+        // On disk, the node's content must not have introduced an extra raw line
+        let output_content = fs::read_to_string(output_file_path.clone()).expect("Failed to read output file");
+        assert_eq!(output_content.lines().count(), 3); // title line + blank line + single escaped node line
+        assert!(output_content.contains("D: Line one\\nLine two\\\\Line three"));
+
+        let node_res = parse_file(output_file_path.clone());
+        assert!(node_res.is_ok());
+        if let Ok(parsed_nodes) = node_res {
+            assert_eq!(parsed_nodes.nodes.len(), 1);
+            assert_eq!(parsed_nodes.nodes[0].text, multiline_text);
+        }
+    }
 
     #[test]
     fn test_comparative_encoding_writing() {
